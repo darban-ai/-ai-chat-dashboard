@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { apiService } from '@/services/apiService'
+import { apiService, ValidationError, AuthenticationError, NotFoundError, NetworkError, TimeoutError } from '@/services/apiService'
 import { dateUtils } from '@/utils/dateUtils'
 
 export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') => {
@@ -11,6 +11,7 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
   const [loading, setLoading] = useState(false)
   const [messagesLoading, setMessagesLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [errorType, setErrorType] = useState(null)
   const [pagination, setPagination] = useState({
     sessions: { limit: 100, offset: 0, count: 0 }, // Get more sessions to filter
     messages: { limit: 50, offset: 0, count: 0 }
@@ -27,11 +28,42 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
     })
   }, [])
 
+  // Enhanced error handling helper
+  const handleError = useCallback((error, context) => {
+    let userMessage = 'An unexpected error occurred'
+    let errorType = 'unknown'
+
+    if (error instanceof ValidationError) {
+      userMessage = `Invalid input: ${error.message}`
+      errorType = 'validation'
+    } else if (error instanceof AuthenticationError) {
+      userMessage = 'Please log in to continue'
+      errorType = 'auth'
+    } else if (error instanceof NotFoundError) {
+      userMessage = context === 'sessions' ? 'No sessions found for this client' : 'Session not found'
+      errorType = 'not_found'
+    } else if (error instanceof NetworkError) {
+      userMessage = 'Connection failed. Please check your internet connection'
+      errorType = 'network'
+    } else if (error instanceof TimeoutError) {
+      userMessage = 'Request timed out. Please try again'
+      errorType = 'timeout'
+    } else {
+      userMessage = error.message || userMessage
+      errorType = 'api'
+    }
+
+    setError(userMessage)
+    setErrorType(errorType)
+    console.error(`Failed to ${context}:`, error)
+  }, [])
+
   // Load available sessions
   const loadSessions = useCallback(async (options = {}) => {
     try {
       setLoading(true)
       setError(null)
+      setErrorType(null)
       
       const response = await apiService.getAvailableSessions(clientId, {
         limit: options.limit || pagination.sessions.limit,
@@ -47,12 +79,11 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
         sessions: response.pagination || prev.sessions
       }))
     } catch (err) {
-      setError(err.message)
-      console.error('Failed to load sessions:', err)
+      handleError(err, 'load sessions')
     } finally {
       setLoading(false)
     }
-  }, [clientId, pagination.sessions.limit, pagination.sessions.offset])
+  }, [clientId, pagination.sessions.limit, pagination.sessions.offset, handleError])
 
   // Load messages for a specific session
   const loadMessages = useCallback(async (sessionId, options = {}) => {
@@ -61,6 +92,7 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
     try {
       setMessagesLoading(true)
       setError(null)
+      setErrorType(null)
       
       const response = await apiService.getSessionHistory(sessionId, {
         limit: options.limit || pagination.messages.limit,
@@ -73,12 +105,11 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
         messages: response.pagination || prev.messages
       }))
     } catch (err) {
-      setError(err.message)
-      console.error('Failed to load messages:', err)
+      handleError(err, 'load messages')
     } finally {
       setMessagesLoading(false)
     }
-  }, [pagination.messages.limit, pagination.messages.offset])
+  }, [pagination.messages.limit, pagination.messages.offset, handleError])
 
   // Handle date change
   const handleDateChange = useCallback((date) => {
@@ -140,6 +171,7 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
     loading,
     messagesLoading,
     error,
+    errorType,
     
     // Pagination info
     pagination,

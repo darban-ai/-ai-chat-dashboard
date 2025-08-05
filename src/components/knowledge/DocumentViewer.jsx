@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Download, FileText, Loader2 } from 'lucide-react'
+import { X, Download, FileText, Loader2, Eye, Code } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { cn } from '@/utils/cn'
@@ -15,9 +15,11 @@ export const DocumentViewer = ({
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [viewMode, setViewMode] = useState('rendered') // 'rendered' or 'raw'
 
   useEffect(() => {
     if (isOpen && document && onGetContent) {
+      setViewMode('rendered') // Reset to rendered view when opening a new document
       loadContent()
     }
   }, [isOpen, document])
@@ -91,15 +93,47 @@ export const DocumentViewer = ({
             </div>
             <div className="flex items-center space-x-2">
               {content && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownload}
-                  className="flex items-center space-x-2"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Download</span>
-                </Button>
+                <>
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'rendered' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('rendered')}
+                      className={cn(
+                        'p-2 h-8 transition-all',
+                        viewMode === 'rendered' 
+                          ? 'bg-blue-600 shadow-sm text-white hover:bg-blue-700' 
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                      )}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'raw' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('raw')}
+                      className={cn(
+                        'p-2 h-8 transition-all',
+                        viewMode === 'raw' 
+                          ? 'bg-blue-600 shadow-sm text-white hover:bg-blue-700' 
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                      )}
+                    >
+                      <Code className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownload}
+                    className="flex items-center space-x-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Download</span>
+                  </Button>
+                </>
               )}
               <Button
                 variant="ghost"
@@ -139,96 +173,104 @@ export const DocumentViewer = ({
             </div>
           ) : content ? (
             <div className="h-full overflow-y-auto overflow-x-hidden">
-              <div className="p-8 max-w-none">
-                <ReactMarkdown 
-                  components={{
-                    h1: ({ children }) => (
-                      <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-8 first:mt-0">
-                        {children}
-                      </h1>
-                    ),
-                    h2: ({ children }) => (
-                      <h2 className="text-2xl font-semibold text-gray-900 mb-4 mt-6">
-                        {children}
-                      </h2>
-                    ),
-                    h3: ({ children }) => (
-                      <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-5">
-                        {children}
-                      </h3>
-                    ),
-                    h4: ({ children }) => (
-                      <h4 className="text-lg font-semibold text-gray-900 mb-2 mt-4">
-                        {children}
-                      </h4>
-                    ),
-                    p: ({ children }) => (
-                      <p className="mb-4 text-base leading-7 text-gray-800">
-                        {children}
-                      </p>
-                    ),
-                    ul: ({ children }) => (
-                      <ul className="mb-4 ml-6">
-                        {children}
-                      </ul>
-                    ),
-                    ol: ({ children }) => (
-                      <ol className="mb-4 ml-6 list-decimal">
-                        {children}
-                      </ol>
-                    ),
-                    li: ({ children }) => (
-                      <li className="mb-2 text-base leading-7 text-gray-800 list-disc">
-                        {children}
-                      </li>
-                    ),
-                    strong: ({ children }) => (
-                      <strong className="font-semibold text-gray-900">
-                        {children}
-                      </strong>
-                    ),
-                    em: ({ children }) => (
-                      <em className="italic text-gray-800">
-                        {children}
-                      </em>
-                    ),
-                    blockquote: ({ children }) => (
-                      <blockquote className="border-l-4 border-gray-300 pl-4 mb-4 italic text-gray-700">
-                        {children}
-                      </blockquote>
-                    ),
-                    code: ({ children }) => (
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">
-                        {children}
-                      </code>
-                    ),
-                    pre: ({ children }) => (
-                      <pre className="bg-gray-100 p-4 rounded mb-4 overflow-x-auto">
-                        {children}
-                      </pre>
-                    ),
-                    a: ({ href, children }) => (
-                      <a 
-                        href={href} 
-                        className="text-blue-600 hover:text-blue-800 underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {children}
-                      </a>
-                    ),
-                    img: ({ src, alt }) => (
-                      <img 
-                        src={src} 
-                        alt={alt} 
-                        className="max-w-full h-auto mb-4 rounded shadow-sm"
-                      />
-                    )
-                  }}
-                >
-                  {content}
-                </ReactMarkdown>
-              </div>
+              {viewMode === 'rendered' ? (
+                <div className="p-8 max-w-none">
+                  <ReactMarkdown 
+                    components={{
+                      h1: ({ children }) => (
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-8 first:mt-0">
+                          {children}
+                        </h1>
+                      ),
+                      h2: ({ children }) => (
+                        <h2 className="text-2xl font-semibold text-gray-900 mb-4 mt-6">
+                          {children}
+                        </h2>
+                      ),
+                      h3: ({ children }) => (
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-5">
+                          {children}
+                        </h3>
+                      ),
+                      h4: ({ children }) => (
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2 mt-4">
+                          {children}
+                        </h4>
+                      ),
+                      p: ({ children }) => (
+                        <p className="mb-4 text-base leading-7 text-gray-800">
+                          {children}
+                        </p>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="mb-4 ml-6">
+                          {children}
+                        </ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="mb-4 ml-6 list-decimal">
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="mb-2 text-base leading-7 text-gray-800 list-disc">
+                          {children}
+                        </li>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold text-gray-900">
+                          {children}
+                        </strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="italic text-gray-800">
+                          {children}
+                        </em>
+                      ),
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-gray-300 pl-4 mb-4 italic text-gray-700">
+                          {children}
+                        </blockquote>
+                      ),
+                      code: ({ children }) => (
+                        <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">
+                          {children}
+                        </code>
+                      ),
+                      pre: ({ children }) => (
+                        <pre className="bg-gray-100 p-4 rounded mb-4 overflow-x-auto">
+                          {children}
+                        </pre>
+                      ),
+                      a: ({ href, children }) => (
+                        <a 
+                          href={href} 
+                          className="text-blue-600 hover:text-blue-800 underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {children}
+                        </a>
+                      ),
+                      img: ({ src, alt }) => (
+                        <img 
+                          src={src} 
+                          alt={alt} 
+                          className="max-w-full h-auto mb-4 rounded shadow-sm"
+                        />
+                      )
+                    }}
+                  >
+                    {content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <div className="h-full bg-gray-50">
+                  <pre className="h-full p-8 text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-auto leading-relaxed">
+                    {content}
+                  </pre>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">

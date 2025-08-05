@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown } from 'lucide-react'
+import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X } from 'lucide-react'
 import { SimpleLayout } from '@/components/layout/SimpleLayout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -18,6 +18,7 @@ export const KnowledgeBase = () => {
     loadDocuments,
     loadMore,
     getDocumentContent,
+    deleteDocument,
     refresh,
     formatFileSize,
   } = useKnowledgeBase()
@@ -44,6 +45,21 @@ export const KnowledgeBase = () => {
     setSelectedDocument(null)
   }
 
+  const handleDeleteDocument = async (document, event) => {
+    event.stopPropagation() // Prevent opening the document viewer
+    
+    const fileName = getDisplayName(document.key)
+    if (confirm(`Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone.`)) {
+      try {
+        await deleteDocument(document.key)
+        // Success feedback could be added here (toast notification, etc.)
+      } catch (error) {
+        // Error is already handled by the hook, but we can show additional UI feedback
+        alert(`Failed to delete "${fileName}". Please try again.`)
+      }
+    }
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -52,6 +68,13 @@ export const KnowledgeBase = () => {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  // Extract filename from full path using regex
+  const getDisplayName = (fullPath) => {
+    // Use regex to match everything after the last forward slash
+    const match = fullPath.match(/\/([^\/]+)$/)
+    return match ? match[1] : fullPath
   }
 
   const getFileTypeColor = (filename) => {
@@ -82,6 +105,15 @@ export const KnowledgeBase = () => {
               <span className="text-sm text-gray-500">
                 {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => alert('Add document functionality coming soon!')}
+                className="flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add</span>
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -174,20 +206,30 @@ export const KnowledgeBase = () => {
                 {filteredDocuments.map((document) => (
                   <Card 
                     key={document.key}
-                    className="hover:shadow-md transition-shadow cursor-pointer group"
+                    className="hover:shadow-md transition-shadow cursor-pointer group relative"
                     onClick={() => handleDocumentClick(document)}
                   >
+                    {/* Delete button - only visible on hover */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDeleteDocument(document, e)}
+                      className="absolute top-2 right-2 p-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-red-50 hover:text-red-600 shadow-sm border border-gray-200 hover:border-red-200 z-10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                    
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
                         <div className={cn(
                           'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
-                          getFileTypeColor(document.key)
+                          getFileTypeColor(getDisplayName(document.key))
                         )}>
                           <DocumentIcon className="w-6 h-6" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-                            {document.key}
+                            {getDisplayName(document.key)}
                           </h3>
                           <div className="mt-2 space-y-1">
                             <div className="flex items-center text-xs text-gray-500">
