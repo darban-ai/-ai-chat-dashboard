@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X, Link, Trash2 } from 'lucide-react'
+import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X, Link, Trash2, Info } from 'lucide-react'
 import { SimpleLayout } from '@/components/layout/SimpleLayout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -7,8 +7,10 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { DocumentViewer } from '@/components/knowledge/DocumentViewer'
 import { CreateUrlModal } from '@/components/knowledge/CreateUrlModal'
 import { CreateDocModal } from '@/components/knowledge/CreateDocModal'
+import { KnowledgeBaseGaps } from '@/components/knowledge/KnowledgeBaseGaps'
 import { DocumentIcon } from '@/components/icons/DocumentIcon'
 import { useKnowledgeBase } from '@/hooks/useKnowledgeBase'
+import { useKnowledgeBaseGaps } from '@/hooks/useKnowledgeBaseGaps'
 import { cn } from '@/utils/cn'
 
 export const KnowledgeBase = () => {
@@ -26,6 +28,19 @@ export const KnowledgeBase = () => {
     formatFileSize,
   } = useKnowledgeBase()
 
+  const {
+    gaps,
+    loading: gapsLoading,
+    error: gapsError,
+    hasMore: hasMoreGaps,
+    loadGaps,
+    loadMore: loadMoreGaps,
+    answerGap,
+    deleteGap,
+    refresh: refreshGaps,
+    formatDate,
+  } = useKnowledgeBaseGaps()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
@@ -37,7 +52,8 @@ export const KnowledgeBase = () => {
 
   useEffect(() => {
     loadDocuments()
-  }, [loadDocuments])
+    loadGaps()
+  }, [loadDocuments, loadGaps])
 
   const filteredDocuments = documents.filter(doc =>
     doc.key.toLowerCase().includes(searchQuery.toLowerCase())
@@ -128,7 +144,8 @@ export const KnowledgeBase = () => {
     }
   }, [])
 
-  const formatDate = (dateString) => {
+  // Format date for documents (different from gaps)
+  const formatDocumentDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -162,105 +179,180 @@ export const KnowledgeBase = () => {
       <div className="flex-1 flex flex-col h-full bg-white">
         {/* Header */}
         <div className="border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Knowledge Base</h1>
-              <p className="text-gray-600 mt-1">
-                Browse and view documents in your knowledge base
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-500">
-                {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
-              </span>
-              <div className="relative" ref={dropdownRef}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddClick}
-                  className="flex items-center space-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-                
-                {showAddDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-                    <div className="py-1">
-                      <button
-                        onClick={handleUrlOptionClick}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      >
-                        <Link className="h-4 w-4 mr-3 text-blue-600" />
-                        From URL
-                      </button>
-                      <button
-                        onClick={handleDocOptionClick}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      >
-                        <FileText className="h-4 w-4 mr-3 text-green-600" />
-                        New Document
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refresh}
-                disabled={loading}
-                className="flex items-center space-x-2"
-              >
-                <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-                <span>Refresh</span>
-              </Button>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Knowledge Management</h1>
+        </div>
 
-          {/* Search */}
-          <div className="mt-4 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Knowledge Gaps Section - Fixed Height with Infinite Scroll */}
+          <div className="h-96 border-b border-gray-200 bg-gray-50 flex flex-col">
+            <div className="flex-shrink-0 p-6 pb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Knowledge Gaps
+                </h2>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-500">
+                    {gaps.length} question{gaps.length !== 1 ? 's' : ''} need{gaps.length === 1 ? 's' : ''} answering
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshGaps}
+                    disabled={gapsLoading}
+                    className="flex items-center space-x-2"
+                  >
+                    <RefreshCw className={cn('h-4 w-4', gapsLoading && 'animate-spin')} />
+                    <span>Refresh</span>
+                  </Button>
+                </div>
+              </div>
+
+              {gapsError && (
+                <Card className="mb-4 border-red-200 bg-red-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                          <FileText className="h-4 w-4 text-red-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-red-800 font-medium">Failed to load knowledge gaps</p>
+                        <p className="text-red-600 text-sm mt-1">{gapsError}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={refreshGaps}
+                        className="text-red-600 border-red-300 hover:bg-red-100"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Scrollable Gaps Container */}
+            <div className="flex-1 px-6 pb-6 overflow-y-auto">
+              <KnowledgeBaseGaps
+                gaps={gaps}
+                onAnswerGap={answerGap}
+                onDeleteGap={deleteGap}
+                loading={gapsLoading}
+                formatDate={formatDate}
+                hasMore={hasMoreGaps}
+                onLoadMore={loadMoreGaps}
               />
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          {error && (
-            <Card className="mb-6 border-red-200 bg-red-50">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-red-600" />
+          {/* Knowledge Base Documents Section */}
+          <div className="flex-1 overflow-auto p-6">
+            {error && (
+              <Card className="mb-6 border-red-200 bg-red-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-red-600" />
+                      </div>
                     </div>
+                    <div className="flex-1">
+                      <p className="text-red-800 font-medium">Failed to load documents</p>
+                      <p className="text-red-600 text-sm mt-1">{error}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={refresh}
+                      className="text-red-600 border-red-300 hover:bg-red-100"
+                    >
+                      Try Again
+                    </Button>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-red-800 font-medium">Failed to load documents</p>
-                    <p className="text-red-600 text-sm mt-1">{error}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Knowledge Base
+                  </h2>
+                  <p className="text-gray-600 mt-1">
+                    Browse and view documents in your knowledge base
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-500">
+                    {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
+                  </span>
+                  <div className="relative" ref={dropdownRef}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddClick}
+                      className="flex items-center space-x-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                    
+                    {showAddDropdown && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={handleUrlOptionClick}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Link className="h-4 w-4 mr-3 text-blue-600" />
+                            From URL
+                          </button>
+                          <button
+                            onClick={handleDocOptionClick}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <FileText className="h-4 w-4 mr-3 text-green-600" />
+                            New Document
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={refresh}
-                    className="text-red-600 border-red-300 hover:bg-red-100"
+                    disabled={loading}
+                    className="flex items-center space-x-2"
                   >
-                    Try Again
+                    <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+                    <span>Refresh</span>
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+
+              {/* Search */}
+              <div className="max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search documents..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
 
           {loading && documents.length === 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -330,7 +422,7 @@ export const KnowledgeBase = () => {
                             </div>
                             <div className="flex items-center text-xs text-gray-500">
                               <Calendar className="h-3 w-3 mr-1" />
-                              {formatDate(document.last_modified)}
+                              {formatDocumentDate(document.last_modified)}
                             </div>
                           </div>
                         </div>
@@ -365,6 +457,7 @@ export const KnowledgeBase = () => {
               )}
             </>
           )}
+          </div>
         </div>
       </div>
 

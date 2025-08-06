@@ -554,6 +554,140 @@ class ApiService {
   }
 
   /**
+   * POST /getKnowledgeBaseGaps
+   * Retrieves paginated list of unanswered knowledge base gaps for a specific client
+   * @param {string} clientId - Client identifier
+   * @param {Object} options - Request options
+   * @param {number} options.limit - Number of gaps to return (default: 10, max: 100)
+   * @param {number} options.offset - Number of gaps to skip (default: 0, min: 0)
+   * @param {number} options.timeout - Request timeout
+   * @returns {Promise<Object>} Gaps data with pagination
+   */
+  async getKnowledgeBaseGaps(clientId, options = {}) {
+    try {
+      // Validate required parameters
+      if (!clientId || typeof clientId !== 'string') {
+        throw new ValidationError('clientId is required and must be a non-empty string')
+      }
+
+      const { limit = 10, offset = 0, timeout = this.defaultTimeout } = options
+      
+      // Validate optional parameters
+      if (typeof limit !== 'number' || limit < 1 || limit > 100) {
+        throw new ValidationError('limit must be a number between 1 and 100')
+      }
+      
+      if (typeof offset !== 'number' || offset < 0) {
+        throw new ValidationError('offset must be a number >= 0')
+      }
+
+      const requestBody = {
+        client_id: clientId,
+        limit,
+        offset
+      }
+
+      return await this.request('/getKnowledgeBaseGaps', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        timeout
+      })
+      
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for getKnowledgeBaseGaps: ${error.message}`)
+    }
+  }
+
+  /**
+   * POST /answerKnowledgeBaseGap
+   * Provides an answer to a specific knowledge base gap and marks it as answered
+   * @param {string} clientId - Client identifier
+   * @param {string} gapId - Knowledge base gap ID to answer
+   * @param {string} answer - Answer text for the question
+   * @param {Object} options - Request options
+   * @returns {Promise<Object>} Success message
+   */
+  async answerKnowledgeBaseGap(clientId, gapId, answer, options = {}) {
+    try {
+      // Validate required parameters
+      if (!clientId || typeof clientId !== 'string') {
+        throw new ValidationError('clientId is required and must be a non-empty string')
+      }
+      
+      if (!gapId || typeof gapId !== 'string') {
+        throw new ValidationError('gapId is required and must be a non-empty string')
+      }
+      
+      if (!answer || typeof answer !== 'string') {
+        throw new ValidationError('answer is required and must be a non-empty string')
+      }
+
+      const { timeout = this.defaultTimeout } = options
+      
+      const requestBody = {
+        client_id: clientId,
+        gap_id: gapId,
+        answer: answer.trim()
+      }
+
+      return await this.request('/answerKnowledgeBaseGap', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        timeout
+      })
+      
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for answerKnowledgeBaseGap: ${error.message}`)
+    }
+  }
+
+  /**
+   * POST /deleteKnowledgeBaseGap
+   * Deletes a specific knowledge base gap for a client
+   * @param {string} clientId - Client identifier
+   * @param {string} gapId - Knowledge base gap ID to delete
+   * @param {Object} options - Request options
+   * @returns {Promise<Object>} Success message
+   */
+  async deleteKnowledgeBaseGap(clientId, gapId, options = {}) {
+    try {
+      // Validate required parameters
+      if (!clientId || typeof clientId !== 'string') {
+        throw new ValidationError('clientId is required and must be a non-empty string')
+      }
+      
+      if (!gapId || typeof gapId !== 'string') {
+        throw new ValidationError('gapId is required and must be a non-empty string')
+      }
+
+      const { timeout = this.defaultTimeout } = options
+      
+      const requestBody = {
+        client_id: clientId,
+        gap_id: gapId
+      }
+
+      return await this.request('/deleteKnowledgeBaseGap', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        timeout
+      })
+      
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for deleteKnowledgeBaseGap: ${error.message}`)
+    }
+  }
+
+  /**
    * Health check endpoint
    * @returns {Promise<Object>} Health status
    */
