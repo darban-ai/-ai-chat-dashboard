@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X } from 'lucide-react'
+import React, { useEffect, useState, useRef } from 'react'
+import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X, Link, Trash2 } from 'lucide-react'
 import { SimpleLayout } from '@/components/layout/SimpleLayout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { DocumentViewer } from '@/components/knowledge/DocumentViewer'
+import { CreateUrlModal } from '@/components/knowledge/CreateUrlModal'
+import { CreateDocModal } from '@/components/knowledge/CreateDocModal'
 import { DocumentIcon } from '@/components/icons/DocumentIcon'
 import { useKnowledgeBase } from '@/hooks/useKnowledgeBase'
 import { cn } from '@/utils/cn'
@@ -18,6 +20,7 @@ export const KnowledgeBase = () => {
     loadDocuments,
     loadMore,
     getDocumentContent,
+    createDocument,
     deleteDocument,
     refresh,
     formatFileSize,
@@ -26,6 +29,11 @@ export const KnowledgeBase = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [showAddDropdown, setShowAddDropdown] = useState(false)
+  const [isUrlModalOpen, setIsUrlModalOpen] = useState(false)
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false)
+  const [createLoading, setCreateLoading] = useState(false)
+  const dropdownRef = useRef(null)
 
   useEffect(() => {
     loadDocuments()
@@ -59,6 +67,66 @@ export const KnowledgeBase = () => {
       }
     }
   }
+
+  const handleCreateFromUrl = async (url) => {
+    setCreateLoading(true)
+    try {
+      await createDocument('url', { url })
+      setShowAddDropdown(false)
+    } catch (error) {
+      throw error // Let the modal handle the error display
+    } finally {
+      setCreateLoading(false)
+    }
+  }
+
+  const handleCreateFromDoc = async (data) => {
+    setCreateLoading(true)
+    try {
+      await createDocument('doc', data)
+      setShowAddDropdown(false)
+    } catch (error) {
+      throw error // Let the modal handle the error display
+    } finally {
+      setCreateLoading(false)
+    }
+  }
+
+  const handleEditDocument = async (key, content) => {
+    try {
+      await createDocument('edit', { key, content })
+    } catch (error) {
+      throw error // Let the DocumentViewer handle the error display
+    }
+  }
+
+  const handleAddClick = () => {
+    setShowAddDropdown(!showAddDropdown)
+  }
+
+  const handleUrlOptionClick = () => {
+    setShowAddDropdown(false)
+    setIsUrlModalOpen(true)
+  }
+
+  const handleDocOptionClick = () => {
+    setShowAddDropdown(false)
+    setIsDocModalOpen(true)
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAddDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -105,15 +173,39 @@ export const KnowledgeBase = () => {
               <span className="text-sm text-gray-500">
                 {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => alert('Add document functionality coming soon!')}
-                className="flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add</span>
-              </Button>
+              <div className="relative" ref={dropdownRef}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddClick}
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+                
+                {showAddDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                    <div className="py-1">
+                      <button
+                        onClick={handleUrlOptionClick}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <Link className="h-4 w-4 mr-3 text-blue-600" />
+                        From URL
+                      </button>
+                      <button
+                        onClick={handleDocOptionClick}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <FileText className="h-4 w-4 mr-3 text-green-600" />
+                        New Document
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -216,7 +308,7 @@ export const KnowledgeBase = () => {
                       onClick={(e) => handleDeleteDocument(document, e)}
                       className="absolute top-2 right-2 p-1.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-red-50 hover:text-red-600 shadow-sm border border-gray-200 hover:border-red-200 z-10"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                     
                     <CardContent className="p-4">
@@ -282,6 +374,23 @@ export const KnowledgeBase = () => {
         isOpen={isViewerOpen}
         onClose={handleCloseViewer}
         onGetContent={getDocumentContent}
+        onEdit={handleEditDocument}
+      />
+
+      {/* Create URL Modal */}
+      <CreateUrlModal
+        isOpen={isUrlModalOpen}
+        onClose={() => setIsUrlModalOpen(false)}
+        onSubmit={handleCreateFromUrl}
+        loading={createLoading}
+      />
+
+      {/* Create Document Modal */}
+      <CreateDocModal
+        isOpen={isDocModalOpen}
+        onClose={() => setIsDocModalOpen(false)}
+        onSubmit={handleCreateFromDoc}
+        loading={createLoading}
       />
     </SimpleLayout>
   )

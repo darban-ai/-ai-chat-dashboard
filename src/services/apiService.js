@@ -483,6 +483,77 @@ class ApiService {
   }
 
   /**
+   * POST /createKnowledgeBaseDoc
+   * Creates a new document in the knowledge base by processing content based on the specified type
+   * @param {string} clientId - Client identifier
+   * @param {string} type - Document processing type ("url" or "doc")
+   * @param {Object} data - Additional data based on type
+   * @param {Object} options - Request options
+   * @returns {Promise<Object>} Created document info
+   */
+  async createKnowledgeBaseDoc(clientId, type, data, options = {}) {
+    try {
+      // Validate required parameters
+      if (!clientId || typeof clientId !== 'string') {
+        throw new ValidationError('clientId is required and must be a non-empty string')
+      }
+      
+      if (!type || typeof type !== 'string') {
+        throw new ValidationError('type is required and must be a non-empty string')
+      }
+
+      if (!['url', 'doc', 'edit'].includes(type)) {
+        throw new ValidationError('type must be either "url", "doc", or "edit"')
+      }
+
+      const { timeout = this.defaultTimeout } = options
+      
+      const requestBody = {
+        client_id: clientId,
+        type: type,
+        ...data
+      }
+
+      // Validate conditional parameters
+      if (type === 'url') {
+        if (!data.url || typeof data.url !== 'string') {
+          throw new ValidationError('url is required when type is "url"')
+        }
+        // Validate that URL contains 'homespice' keyword
+        if (!data.url.includes('homespice')) {
+          throw new ValidationError('URL must contain "homespice" keyword')
+        }
+      } else if (type === 'doc') {
+        if (!data.filename || typeof data.filename !== 'string') {
+          throw new ValidationError('filename is required when type is "doc"')
+        }
+        if (!data.content || typeof data.content !== 'string') {
+          throw new ValidationError('content is required when type is "doc"')
+        }
+      } else if (type === 'edit') {
+        if (!data.key || typeof data.key !== 'string') {
+          throw new ValidationError('key is required when type is "edit"')
+        }
+        if (!data.content || typeof data.content !== 'string') {
+          throw new ValidationError('content is required when type is "edit"')
+        }
+      }
+
+      return await this.request('/createKnowledgeBaseDoc', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        timeout
+      })
+      
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for createKnowledgeBaseDoc: ${error.message}`)
+    }
+  }
+
+  /**
    * Health check endpoint
    * @returns {Promise<Object>} Health status
    */

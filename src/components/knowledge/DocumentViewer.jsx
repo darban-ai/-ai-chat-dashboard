@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Download, FileText, Loader2, Eye, Code } from 'lucide-react'
+import { X, Download, FileText, Loader2, Eye, Edit3, Save, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { cn } from '@/utils/cn'
@@ -10,16 +10,22 @@ export const DocumentViewer = ({
   isOpen, 
   onClose, 
   onGetContent,
+  onEdit,
   className 
 }) => {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [viewMode, setViewMode] = useState('rendered') // 'rendered' or 'raw'
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
 
   useEffect(() => {
     if (isOpen && document && onGetContent) {
       setViewMode('rendered') // Reset to rendered view when opening a new document
+      setIsEditing(false) // Reset edit mode
+      setEditContent('')
       loadContent()
     }
   }, [isOpen, document])
@@ -48,6 +54,37 @@ export const DocumentViewer = ({
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+    }
+  }
+
+  const handleEditStart = () => {
+    setIsEditing(true)
+    setEditContent(content)
+    setViewMode('raw') // Switch to raw mode for editing
+  }
+
+  const handleEditCancel = () => {
+    setIsEditing(false)
+    setEditContent('')
+  }
+
+  const handleEditSave = async () => {
+    if (!onEdit || !document) return
+    
+    try {
+      setSaveLoading(true)
+      setError(null)
+      
+      await onEdit(document.key, editContent)
+      
+      // Update the content and exit edit mode
+      setContent(editContent)
+      setIsEditing(false)
+      setEditContent('')
+    } catch (err) {
+      setError(err.message || 'Failed to save document')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -120,19 +157,61 @@ export const DocumentViewer = ({
                           : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                       )}
                     >
-                      <Code className="h-4 w-4" />
+                      <Edit3 className="h-4 w-4" />
                     </Button>
                   </div>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownload}
-                    className="flex items-center space-x-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>Download</span>
-                  </Button>
+                  {isEditing ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditCancel}
+                        disabled={saveLoading}
+                        className="flex items-center space-x-2"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        <span>Cancel</span>
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={handleEditSave}
+                        disabled={saveLoading || !editContent.trim()}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                      >
+                        {saveLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                        <span>{saveLoading ? 'Saving...' : 'Submit'}</span>
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {viewMode === 'raw' && onEdit && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleEditStart}
+                          className="flex items-center space-x-2"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          <span>Edit</span>
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDownload}
+                        className="flex items-center space-x-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Download</span>
+                      </Button>
+                    </>
+                  )}
                 </>
               )}
               <Button
@@ -266,9 +345,19 @@ export const DocumentViewer = ({
                 </div>
               ) : (
                 <div className="h-full bg-gray-50">
-                  <pre className="h-full p-8 text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-auto leading-relaxed">
-                    {content}
-                  </pre>
+                  {isEditing ? (
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="h-full w-full p-8 text-sm font-mono text-gray-800 bg-white border-none outline-none resize-none leading-relaxed"
+                      placeholder="Enter your document content here..."
+                      disabled={saveLoading}
+                    />
+                  ) : (
+                    <pre className="h-full p-8 text-sm font-mono text-gray-800 whitespace-pre-wrap overflow-auto leading-relaxed">
+                      {content}
+                    </pre>
+                  )}
                 </div>
               )}
             </div>

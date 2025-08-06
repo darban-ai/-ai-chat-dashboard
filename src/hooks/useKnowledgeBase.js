@@ -94,6 +94,45 @@ export const useKnowledgeBase = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfa
     }
   }, [clientId])
 
+  // Create document
+  const createDocument = useCallback(async (type, data) => {
+    try {
+      setError(null)
+      setErrorType(null)
+      
+      const response = await apiService.createKnowledgeBaseDoc(clientId, type, data)
+      
+      if (type === 'edit') {
+        // Update existing document in the local state
+        setDocuments(prev => prev.map(doc => 
+          doc.key === data.key 
+            ? {
+                ...doc,
+                etag: response.etag,
+                size: response.size,
+                last_modified: response.last_modified
+              }
+            : doc
+        ))
+        return { success: true, message: 'Document updated successfully' }
+      } else {
+        // Add the new document to the local state
+        const newDocument = {
+          key: response.key,
+          etag: response.etag,
+          size: response.size,
+          last_modified: response.last_modified
+        }
+        
+        setDocuments(prev => [newDocument, ...prev])
+        return { success: true, document: newDocument, message: 'Document created successfully' }
+      }
+    } catch (err) {
+      handleError(err, type === 'edit' ? 'update document' : 'create document')
+      throw err // Re-throw for component handling
+    }
+  }, [clientId, handleError])
+
   // Delete document
   const deleteDocument = useCallback(async (key) => {
     try {
@@ -149,6 +188,7 @@ export const useKnowledgeBase = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfa
     loadDocuments,
     loadMore,
     getDocumentContent,
+    createDocument,
     deleteDocument,
     refresh,
     
