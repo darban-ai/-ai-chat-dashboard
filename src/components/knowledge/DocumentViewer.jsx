@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Download, FileText, Loader2, Eye, Edit3, Save, XCircle } from 'lucide-react'
+import { X, FileText, Loader2, Eye, Edit3, Save, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { cn } from '@/utils/cn'
@@ -40,20 +40,6 @@ export const DocumentViewer = ({
       setError(err.message || 'Failed to load document content')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleDownload = () => {
-    if (content && document) {
-      const blob = new Blob([content], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = document.key
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
     }
   }
 
@@ -149,7 +135,13 @@ export const DocumentViewer = ({
                     <Button
                       variant={viewMode === 'raw' ? 'default' : 'ghost'}
                       size="sm"
-                      onClick={() => setViewMode('raw')}
+                      onClick={() => {
+                        if (onEdit && !isEditing) {
+                          handleEditStart()
+                        } else {
+                          setViewMode('raw')
+                        }
+                      }}
                       className={cn(
                         'p-2 h-8 transition-all',
                         viewMode === 'raw' 
@@ -161,7 +153,7 @@ export const DocumentViewer = ({
                     </Button>
                   </div>
                   
-                  {isEditing ? (
+                  {isEditing && (
                     <>
                       <Button
                         variant="outline"
@@ -186,29 +178,6 @@ export const DocumentViewer = ({
                           <Save className="h-4 w-4" />
                         )}
                         <span>{saveLoading ? 'Saving...' : 'Submit'}</span>
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      {viewMode === 'raw' && onEdit && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleEditStart}
-                          className="flex items-center space-x-2"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                          <span>Edit</span>
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDownload}
-                        className="flex items-center space-x-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        <span>Download</span>
                       </Button>
                     </>
                   )}
