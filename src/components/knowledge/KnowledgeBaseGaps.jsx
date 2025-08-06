@@ -9,10 +9,8 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
   const [answerTexts, setAnswerTexts] = useState({}) // Store answer text per gap ID
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(null)
-  const [showTooltip, setShowTooltip] = useState(null)
   const textareaRef = useRef(null)
   const questionsContainerRef = useRef(null)
-  const tooltipRef = useRef(null)
 
   // Infinite scroll functionality - handled by questions container
   useEffect(() => {
@@ -32,19 +30,6 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
     return () => questionsContainer.removeEventListener('scroll', handleScroll)
   }, [hasMore, loading, onLoadMore])
 
-  // Click outside to close tooltip
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (tooltipRef.current && !tooltipRef.current.contains(event.target)) {
-        setShowTooltip(null)
-      }
-    }
-
-    if (showTooltip) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showTooltip])
 
   const handleExpand = (gapId) => {
     if (expandedGap === gapId) {
@@ -203,59 +188,13 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
                 <div className="border-t border-gray-200 bg-gray-50">
                   <div className="p-4 space-y-4">
                     <div>
-                      <div className="flex items-center mb-2">
-                        <label className="block text-sm font-medium text-gray-700">
+                      <div className="mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Your Answer
                         </label>
-                        {gap.suggestions && (
-                          <div ref={tooltipRef} className="relative ml-2">
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 hover:bg-blue-200 transition-colors"
-                              onClick={() => setShowTooltip(showTooltip === gap.id ? null : gap.id)}
-                            >
-                              <Info className="w-2.5 h-2.5 text-blue-600" />
-                            </button>
-                            
-                            {/* Beautiful Tooltip */}
-                            {showTooltip === gap.id && (
-                              <div className="absolute left-6 top-0 z-50 w-72 bg-white rounded-lg shadow-lg border border-gray-200 transform -translate-y-2">
-                                <div className="relative">
-                                  {/* Arrow */}
-                                  <div className="absolute -left-2 top-3 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-white"></div>
-                                  <div className="absolute -left-2.5 top-3 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-200"></div>
-                                  
-                                  <div className="p-3">
-                                    <div className="flex items-start space-x-2">
-                                      <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                                        <Info className="w-3 h-3 text-blue-600" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <h4 className="text-sm font-medium text-gray-900 mb-1">
-                                          Suggestion
-                                        </h4>
-                                        <div className="max-h-32 overflow-y-auto text-sm text-gray-600 leading-relaxed scrollbar-hide">
-                                          {gap.suggestions.split('\n').map((line, index) => (
-                                            <p key={index} className={index > 0 ? 'mt-2' : ''}>
-                                              {line.trim().startsWith('-') ? (
-                                                <span className="flex items-start">
-                                                  <span className="mr-2">•</span>
-                                                  <span>{line.trim().substring(1).trim()}</span>
-                                                </span>
-                                              ) : (
-                                                line
-                                              )}
-                                            </p>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        <p className="text-xs text-red-600 italic mb-3">
+                          If it is a product level information, it is recommended to update your Product Page information directly
+                        </p>
                       </div>
                       <textarea
                         ref={textareaRef}

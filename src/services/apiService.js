@@ -519,9 +519,9 @@ class ApiService {
         if (!data.url || typeof data.url !== 'string') {
           throw new ValidationError('url is required when type is "url"')
         }
-        // Validate that URL contains 'homespice' keyword
+        // Validate that URL is from accepted domain
         if (!data.url.includes('homespice')) {
-          throw new ValidationError('URL must contain "homespice" keyword')
+          throw new ValidationError('We only accept your domain\'s URL.')
         }
       } else if (type === 'doc') {
         if (!data.filename || typeof data.filename !== 'string') {

@@ -471,6 +471,9 @@ export const KnowledgeBase = () => {
                       >
                         <RefreshCw className={cn('h-4 w-4', gapsLoading && 'animate-spin')} />
                       </Button>
+                      <span className="text-xs text-red-600 italic">
+                        Knowledge gaps are created every one hour
+                      </span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className="text-sm text-gray-500">

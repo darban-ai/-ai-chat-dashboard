@@ -18,7 +18,7 @@ export const CreateUrlModal = ({ isOpen, onClose, onSubmit, loading }) => {
     }
 
     if (!url.includes('homespice')) {
-      setError('URL must contain "homespice" keyword')
+      setError('We only accept your domain\'s URL.')
       return
     }
 
@@ -75,7 +75,7 @@ export const CreateUrlModal = ({ isOpen, onClose, onSubmit, loading }) => {
                 autoFocus
               />
               <p className="text-xs text-gray-500 mt-1">
-                URL must contain "homespice" keyword
+                We only accept your domain's URL.
               </p>
             </div>
 
