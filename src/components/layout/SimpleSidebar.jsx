@@ -9,26 +9,26 @@ import {
 import { cn } from '@/utils/cn'
 
 const navigation = [
-  {
-    name: 'Home',
-    href: '/',
-    icon: LayoutDashboard,
-  },
-  {
-    name: 'Messages',
-    href: '/chats',
-    icon: MessageSquare,
-  },
+  // {
+  //   name: 'Home',
+  //   href: '/',
+  //   icon: LayoutDashboard,
+  // },
+  // {
+  //   name: 'Messages',
+  //   href: '/chats',
+  //   icon: MessageSquare,
+  // },
   {
     name: 'Knowledge Base',
     href: '/knowledge-base',
     icon: BookOpen,
   },
-  {
-    name: 'Settings',
-    href: '/settings',
-    icon: Settings,
-  },
+  // {
+  //   name: 'Settings',
+  //   href: '/settings',
+  //   icon: Settings,
+  // },
 ]
 
 export const SimpleSidebar = ({ className }) => {
