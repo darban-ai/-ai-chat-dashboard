@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X, Link, Trash2, Info } from 'lucide-react'
+import { Search, RefreshCw, FileText, Calendar, HardDrive, ChevronDown, Plus, X, Link, Trash2, Info, AlertCircle, XCircle } from 'lucide-react'
 import { SimpleLayout } from '@/components/layout/SimpleLayout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -41,6 +41,7 @@ export const KnowledgeBase = () => {
     formatDate,
   } = useKnowledgeBaseGaps()
 
+  const [activeTab, setActiveTab] = useState('knowledge-base') // 'knowledge-base' or 'knowledge-gaps'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
@@ -48,6 +49,7 @@ export const KnowledgeBase = () => {
   const [isUrlModalOpen, setIsUrlModalOpen] = useState(false)
   const [isDocModalOpen, setIsDocModalOpen] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null)
   const dropdownRef = useRef(null)
 
   useEffect(() => {
@@ -174,6 +176,21 @@ export const KnowledgeBase = () => {
     }
   }
 
+  const handleDeleteConfirm = (gap, onConfirm) => {
+    setDeleteConfirmation({ gap, onConfirm })
+  }
+
+  const confirmDelete = async () => {
+    if (deleteConfirmation?.onConfirm) {
+      await deleteConfirmation.onConfirm()
+    }
+    setDeleteConfirmation(null)
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirmation(null)
+  }
+
   return (
     <SimpleLayout>
       <div className="flex-1 flex flex-col h-full bg-white">
@@ -182,76 +199,51 @@ export const KnowledgeBase = () => {
           <h1 className="text-2xl font-bold text-gray-900">Knowledge Management</h1>
         </div>
 
-
-        {/* Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Knowledge Gaps Section - Fixed Height with Infinite Scroll */}
-          <div className="h-96 border-b border-gray-200 bg-gray-50 flex flex-col">
-            <div className="flex-shrink-0 p-6 pb-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Knowledge Gaps
-                </h2>
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-500">
-                    {gaps.length} question{gaps.length !== 1 ? 's' : ''} need{gaps.length === 1 ? 's' : ''} answering
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={refreshGaps}
-                    disabled={gapsLoading}
-                    className="flex items-center space-x-2"
-                  >
-                    <RefreshCw className={cn('h-4 w-4', gapsLoading && 'animate-spin')} />
-                    <span>Refresh</span>
-                  </Button>
-                </div>
-              </div>
-
-              {gapsError && (
-                <Card className="mb-4 border-red-200 bg-red-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                          <FileText className="h-4 w-4 text-red-600" />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-red-800 font-medium">Failed to load knowledge gaps</p>
-                        <p className="text-red-600 text-sm mt-1">{gapsError}</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={refreshGaps}
-                        className="text-red-600 border-red-300 hover:bg-red-100"
-                      >
-                        Try Again
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 px-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('knowledge-base')}
+              className={cn(
+                "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
+                activeTab === 'knowledge-base'
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               )}
-            </div>
+            >
+              Knowledge Base
+            </button>
+            <button
+              onClick={() => setActiveTab('knowledge-gaps')}
+              className={cn(
+                "py-2 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2",
+                activeTab === 'knowledge-gaps'
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              )}
+            >
+              <span>Knowledge Gaps</span>
+              {gaps.length > 0 && (
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  {gaps.length}
+                </span>
+              )}
+            </button>
+          </nav>
+        </div>
 
-            {/* Scrollable Gaps Container */}
-            <div className="flex-1 px-6 pb-6 overflow-y-auto">
-              <KnowledgeBaseGaps
-                gaps={gaps}
-                onAnswerGap={answerGap}
-                onDeleteGap={deleteGap}
-                loading={gapsLoading}
-                formatDate={formatDate}
-                hasMore={hasMoreGaps}
-                onLoadMore={loadMoreGaps}
-              />
-            </div>
-          </div>
-
-          {/* Knowledge Base Documents Section */}
-          <div className="flex-1 overflow-auto p-6">
+        {/* Content with Slide Animation */}
+        <div className="flex-1 relative overflow-hidden">
+          <div 
+            className="flex transition-transform duration-300 ease-in-out h-full"
+            style={{ 
+              transform: `translateX(${activeTab === 'knowledge-gaps' ? '-50%' : '0%'})`,
+              width: '200%'
+            }}
+          >
+            {/* Knowledge Base Tab Content */}
+            <div className="w-1/2 flex-shrink-0 flex flex-col h-full">
+              <div className="flex-1 overflow-auto p-6">
             {error && (
               <Card className="mb-6 border-red-200 bg-red-50">
                 <CardContent className="p-4">
@@ -457,9 +449,126 @@ export const KnowledgeBase = () => {
               )}
             </>
           )}
+              </div>
+            </div>
+
+            {/* Knowledge Gaps Tab Content */}
+            <div className="w-1/2 flex-shrink-0 flex flex-col h-full bg-white">
+              <div className="flex-1 flex flex-col">
+                {/* Knowledge Gaps Header */}
+                <div className="flex-shrink-0 px-6 py-3 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        Knowledge Gaps
+                      </h2>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={refreshGaps}
+                        disabled={gapsLoading}
+                        className="p-1.5 h-7 w-7 hover:bg-gray-200 transition-colors"
+                      >
+                        <RefreshCw className={cn('h-4 w-4', gapsLoading && 'animate-spin')} />
+                      </Button>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm text-gray-500">
+                        {gaps.length} question{gaps.length !== 1 ? 's' : ''} need{gaps.length === 1 ? 's' : ''} answering
+                      </span>
+                    </div>
+                  </div>
+
+                  {gapsError && (
+                    <Card className="mb-4 border-red-200 bg-red-50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-red-600" />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-red-800 font-medium">Failed to load knowledge gaps</p>
+                            <p className="text-red-600 text-sm mt-1">{gapsError}</p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={refreshGaps}
+                            className="text-red-600 border-red-300 hover:bg-red-100"
+                          >
+                            Try Again
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Scrollable Gaps Container - Full Width */}
+                <div className="flex-1 bg-gray-50 p-4">
+                  <div className="h-full overflow-y-auto">
+                    <KnowledgeBaseGaps
+                      gaps={gaps}
+                      onAnswerGap={answerGap}
+                      onDeleteGap={deleteGap}
+                      loading={gapsLoading}
+                      formatDate={formatDate}
+                      hasMore={hasMoreGaps}
+                      onLoadMore={loadMoreGaps}
+                      onDeleteConfirm={handleDeleteConfirm}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Delete Question</h3>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this question? This action cannot be undone.
+            </p>
+            
+            <div className="bg-gray-50 p-3 rounded-md mb-6">
+              <p className="text-sm text-gray-700 font-medium line-clamp-2">
+                "{deleteConfirmation.gap.question}"
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelDelete}
+                className="flex items-center space-x-2"
+              >
+                <XCircle className="h-4 w-4" />
+                <span>Cancel</span>
+              </Button>
+              <Button
+                variant="default"
+                onClick={confirmDelete}
+                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Document Viewer Modal */}
       <DocumentViewer

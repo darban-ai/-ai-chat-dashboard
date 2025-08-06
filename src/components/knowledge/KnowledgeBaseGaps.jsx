@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import { cn } from '@/utils/cn'
 
-export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, formatDate, hasMore, onLoadMore }) => {
+export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, formatDate, hasMore, onLoadMore, onDeleteConfirm }) => {
   const [expandedGap, setExpandedGap] = useState(null)
-  const [answerText, setAnswerText] = useState('')
+  const [answerTexts, setAnswerTexts] = useState({}) // Store answer text per gap ID
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [showTooltip, setShowTooltip] = useState(null)
@@ -49,10 +49,8 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
   const handleExpand = (gapId) => {
     if (expandedGap === gapId) {
       setExpandedGap(null)
-      setAnswerText('')
     } else {
       setExpandedGap(gapId)
-      setAnswerText('')
       // Focus textarea after expansion
       setTimeout(() => {
         if (textareaRef.current) {
@@ -63,13 +61,19 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
   }
 
   const handleSubmit = async (gap) => {
-    if (!answerText.trim()) return
+    const currentAnswerText = answerTexts[gap.id] || ''
+    if (!currentAnswerText.trim()) return
     
     try {
       setSubmitting(true)
-      await onAnswerGap(gap.id, answerText.trim())
+      await onAnswerGap(gap.id, currentAnswerText.trim())
       setExpandedGap(null)
-      setAnswerText('')
+      // Remove the answer text for this gap after successful submission
+      setAnswerTexts(prev => {
+        const newTexts = { ...prev }
+        delete newTexts[gap.id]
+        return newTexts
+      })
     } catch (error) {
       // Error is handled by the parent component
     } finally {
@@ -79,26 +83,33 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
 
   const handleCancel = () => {
     setExpandedGap(null)
-    setAnswerText('')
+    // Keep the answer text when canceling - don't clear it
   }
 
-  const handleDelete = async (gap) => {
-    if (!onDeleteGap) return
-    
-    try {
-      setDeleting(gap.id)
-      await onDeleteGap(gap.id)
-      
-      // Close expanded state if this gap was expanded
-      if (expandedGap === gap.id) {
-        setExpandedGap(null)
-        setAnswerText('')
-      }
-    } catch (error) {
-      console.error('Failed to delete gap:', error)
-      // Error is handled by the parent component
-    } finally {
-      setDeleting(null)
+  const handleDelete = (gap) => {
+    if (onDeleteConfirm) {
+      onDeleteConfirm(gap, async () => {
+        try {
+          setDeleting(gap.id)
+          await onDeleteGap(gap.id)
+          
+          // Close expanded state if this gap was expanded
+          if (expandedGap === gap.id) {
+            setExpandedGap(null)
+          }
+          
+          // Remove the answer text for this gap
+          setAnswerTexts(prev => {
+            const newTexts = { ...prev }
+            delete newTexts[gap.id]
+            return newTexts
+          })
+        } catch (error) {
+          console.error('Failed to delete gap:', error)
+        } finally {
+          setDeleting(null)
+        }
+      })
     }
   }
 
@@ -124,12 +135,10 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
   }
 
   return (
-    <div className="flex h-full">
-      {/* Questions Container - 75% width with its own scroll */}
-      <div 
-        ref={questionsContainerRef} 
-        className="w-3/4 overflow-y-auto space-y-2 pr-2 scrollbar-hide"
-      >
+    <div 
+      ref={questionsContainerRef} 
+      className="space-y-2 overflow-y-auto scrollbar-hide h-full"
+    >
         {gaps.map((gap) => {
           const isExpanded = expandedGap === gap.id
           
@@ -137,7 +146,7 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
             <Card 
               key={gap.id}
               className={cn(
-                "transition-all duration-200 border-2",
+                "transition-all duration-200 border-2 group",
                 isExpanded 
                   ? "border-blue-200 shadow-md" 
                   : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
@@ -165,7 +174,7 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      className="p-2 h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleDelete(gap)
@@ -173,7 +182,7 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
                       disabled={deleting === gap.id}
                     >
                       {deleting === gap.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin text-red-600" />
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
@@ -250,8 +259,11 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
                       </div>
                       <textarea
                         ref={textareaRef}
-                        value={answerText}
-                        onChange={(e) => setAnswerText(e.target.value)}
+                        value={answerTexts[gap.id] || ''}
+                        onChange={(e) => setAnswerTexts(prev => ({
+                          ...prev,
+                          [gap.id]: e.target.value
+                        }))}
                         placeholder="Provide a comprehensive answer to this question..."
                         className="w-full h-32 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm leading-relaxed"
                         disabled={submitting}
@@ -274,7 +286,7 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
                         variant="default"
                         size="sm"
                         onClick={() => handleSubmit(gap)}
-                        disabled={submitting || !answerText.trim()}
+                        disabled={submitting || !(answerTexts[gap.id] || '').trim()}
                         className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
                       >
                         {submitting ? (
@@ -314,12 +326,6 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
             <p className="text-sm text-gray-400">No more questions to load</p>
           </div>
         )}
-      </div>
-      
-      {/* Right Side - 25% width for whole page scrolling */}
-      <div className="w-1/4">
-        {/* Empty space - scrolling here will scroll the whole page */}
-      </div>
     </div>
   )
 }
