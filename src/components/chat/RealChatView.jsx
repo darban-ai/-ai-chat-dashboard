@@ -1,9 +1,10 @@
 import React, { useRef, useEffect } from 'react'
-import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign } from 'lucide-react'
+import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
 import ReactMarkdown from 'react-markdown'
+
 
 // Helper function to render tool results
 const renderToolResult = (contentItem) => {
@@ -13,14 +14,16 @@ const renderToolResult = (contentItem) => {
     // Handle search results
     if (resultData.search && resultData.search.products) {
       const products = resultData.search.products
+      const totalResults = resultData.search.total_results || products.length
       
       return (
         <div className="space-y-3">
           <div className="text-sm text-gray-600 mb-3">
-            Found {resultData.search.total_results || products.length} products:
+            Found {totalResults} product{totalResults !== 1 ? 's' : ''}
           </div>
-          <div className="flex overflow-x-auto pb-2 gap-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-            {products.map((product, index) => (
+          {products && products.length > 0 ? (
+            <div className="flex overflow-x-auto pb-2 gap-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              {products.map((product, index) => (
               <div key={product.id || index} className="flex-shrink-0 w-64 border border-gray-200 rounded-lg p-3 bg-white">
                 <div className="space-y-3">
                   {product.main_image && (
@@ -61,8 +64,13 @@ const renderToolResult = (contentItem) => {
                 </div>
               </div>
             ))}
-          </div>
-          {products.length > 10 && (
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <div className="text-sm">No products match your search criteria</div>
+            </div>
+          )}
+          {products && products.length > 10 && (
             <div className="text-xs text-gray-500 text-center">
               Scroll horizontally to see all {products.length} products
             </div>
@@ -250,11 +258,21 @@ export const RealChatView = ({
             contentArray = [{ type: 'text', text: String(message.content) }]
           }
 
-          // Filter to show text and tool result messages
-          const displayableMessages = contentArray.filter(item => 
-            (item.type === 'text' && item.text) || 
-            (item.type === 'mcp_tool_result' && !item.is_error)
-          )
+          // Filter to show text and specific tool result messages
+          const displayableMessages = contentArray.filter(item => {
+            if (item.type === 'text' && item.text) {
+              return true
+            }
+            if (item.type === 'mcp_tool_result' && !item.is_error) {
+              // Find corresponding tool use to check the name
+              const toolUse = contentArray.find(toolItem => 
+                toolItem.type === 'mcp_tool_use' && 
+                toolItem.id === item.tool_use_id
+              )
+              return toolUse && toolUse.name === 'search_shop_catalog'
+            }
+            return false
+          })
           
           return displayableMessages.map((contentItem, contentIndex) => (
             <div
@@ -266,7 +284,11 @@ export const RealChatView = ({
             >
               {/* Avatar */}
               <div className="flex-shrink-0">
-                {isBot ? (
+                {contentItem.type === 'mcp_tool_result' ? (
+                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                    <Settings className="h-4 w-4 text-white" />
+                  </div>
+                ) : isBot ? (
                   <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
                     <Bot className="h-4 w-4 text-white" />
                   </div>
