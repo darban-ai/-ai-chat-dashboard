@@ -3,6 +3,80 @@ import { Bot, User, ChevronDown, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
+import ReactMarkdown from 'react-markdown'
+
+// Helper function to parse and render message content
+const renderMessageContent = (content) => {
+  // If it's already a string, return as is
+  if (typeof content === 'string') {
+    return content
+  }
+
+  // Try to parse JSON if it's an object or string that looks like JSON
+  let parsedContent
+  try {
+    if (typeof content === 'object') {
+      parsedContent = content
+    } else {
+      parsedContent = JSON.parse(content)
+    }
+  } catch (error) {
+    // If parsing fails, return the original content as string
+    return typeof content === 'string' ? content : JSON.stringify(content, null, 2)
+  }
+
+  // Handle the expected structure: array of message objects
+  if (Array.isArray(parsedContent)) {
+    return parsedContent.map((item, index) => {
+      if (item.type === 'text' && item.text) {
+        return (
+          <div key={index} className={cn("prose prose-sm max-w-none prose-gray", index > 0 ? 'mt-3' : '')}>
+            <ReactMarkdown 
+              components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="text-sm">{children}</li>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+                code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+              }}
+            >
+              {item.text}
+            </ReactMarkdown>
+          </div>
+        )
+      }
+      return null
+    }).filter(Boolean)
+  }
+
+  // If it's a single object with text
+  if (parsedContent.type === 'text' && parsedContent.text) {
+    return (
+      <div className="prose prose-sm max-w-none prose-gray">
+        <ReactMarkdown 
+          components={{
+            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+            ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+            li: ({ children }) => <li className="text-sm">{children}</li>,
+            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+            em: ({ children }) => <em className="italic">{children}</em>,
+            code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+            pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+          }}
+        >
+          {parsedContent.text}
+        </ReactMarkdown>
+      </div>
+    )
+  }
+
+  // Fallback: return JSON string
+  return JSON.stringify(parsedContent, null, 2)
+}
 
 export const RealChatView = ({ 
   messages = [], 
@@ -180,11 +254,8 @@ export const RealChatView = ({
                     : 'bg-white border border-gray-200 rounded-bl-md'
                 )}>
                   {/* Message content */}
-                  <div className="text-sm whitespace-pre-wrap break-words">
-                    {typeof message.content === 'string' 
-                      ? message.content 
-                      : JSON.stringify(message.content, null, 2)
-                    }
+                  <div className="text-sm break-words">
+                    {renderMessageContent(message.content)}
                   </div>
 
                   {/* Timestamp */}
