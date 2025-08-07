@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -84,13 +84,11 @@ export const DatePicker = ({
             </Button>
 
             <div className="flex-1 relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={handleDateInputChange}
                 max={today}
-                className="pl-10"
               />
             </div>
 
@@ -107,17 +105,11 @@ export const DatePicker = ({
 
           {/* Selected date display */}
           <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Viewing chats for
-            </p>
-            <p className="font-medium text-gray-900">
-              {dateUtils.getSmartDate(selectedDate)}
-            </p>
-            {selectedDate !== today && (
-              <p className="text-xs text-gray-500">
-                {dateUtils.formatDate(selectedDate, 'EEEE, MMMM dd, yyyy')}
+            <div className="inline-block bg-teal-500 text-white px-4 py-2 rounded-lg">
+              <p className="font-medium">
+                {selectedDate === today ? 'Today' : selectedDate === yesterdayString ? 'Yesterday' : dateUtils.formatDate(selectedDate, 'MMMM dd yyyy')}
               </p>
-            )}
+            </div>
           </div>
         </div>
       </CardContent>

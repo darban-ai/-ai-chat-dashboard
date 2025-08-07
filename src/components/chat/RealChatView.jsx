@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign, Settings } from 'lucide-react'
+import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
@@ -285,8 +285,8 @@ export const RealChatView = ({
               {/* Avatar */}
               <div className="flex-shrink-0">
                 {contentItem.type === 'mcp_tool_result' ? (
-                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                    <Settings className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+                    <Wrench className="h-4 w-4 text-white" />
                   </div>
                 ) : isBot ? (
                   <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
