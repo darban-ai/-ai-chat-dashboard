@@ -5,78 +5,6 @@ import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
 import ReactMarkdown from 'react-markdown'
 
-// Helper function to parse and render message content
-const renderMessageContent = (content) => {
-  // If it's already a string, return as is
-  if (typeof content === 'string') {
-    return content
-  }
-
-  // Try to parse JSON if it's an object or string that looks like JSON
-  let parsedContent
-  try {
-    if (typeof content === 'object') {
-      parsedContent = content
-    } else {
-      parsedContent = JSON.parse(content)
-    }
-  } catch (error) {
-    // If parsing fails, return the original content as string
-    return typeof content === 'string' ? content : JSON.stringify(content, null, 2)
-  }
-
-  // Handle the expected structure: array of message objects
-  if (Array.isArray(parsedContent)) {
-    return parsedContent.map((item, index) => {
-      if (item.type === 'text' && item.text) {
-        return (
-          <div key={index} className={cn("prose prose-sm max-w-none prose-gray", index > 0 ? 'mt-3' : '')}>
-            <ReactMarkdown 
-              components={{
-                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                li: ({ children }) => <li className="text-sm">{children}</li>,
-                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                em: ({ children }) => <em className="italic">{children}</em>,
-                code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
-                pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
-              }}
-            >
-              {item.text}
-            </ReactMarkdown>
-          </div>
-        )
-      }
-      return null
-    }).filter(Boolean)
-  }
-
-  // If it's a single object with text
-  if (parsedContent.type === 'text' && parsedContent.text) {
-    return (
-      <div className="prose prose-sm max-w-none prose-gray">
-        <ReactMarkdown 
-          components={{
-            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-            ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-            li: ({ children }) => <li className="text-sm">{children}</li>,
-            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-            em: ({ children }) => <em className="italic">{children}</em>,
-            code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
-            pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
-          }}
-        >
-          {parsedContent.text}
-        </ReactMarkdown>
-      </div>
-    )
-  }
-
-  // Fallback: return JSON string
-  return JSON.stringify(parsedContent, null, 2)
-}
 
 export const RealChatView = ({ 
   messages = [], 
@@ -217,13 +145,35 @@ export const RealChatView = ({
           </div>
         )}
 
-        {messages.map((message, index) => {
+        {messages.flatMap((message, messageIndex) => {
           const isUser = message.role === 'user'
           const isBot = message.role === 'assistant'
           
-          return (
+          // Parse content to split into individual message parts
+          let contentArray = []
+          try {
+            if (Array.isArray(message.content)) {
+              contentArray = message.content
+            } else if (typeof message.content === 'string') {
+              try {
+                const parsed = JSON.parse(message.content)
+                contentArray = Array.isArray(parsed) ? parsed : [parsed]
+              } catch {
+                contentArray = [{ type: 'text', text: message.content }]
+              }
+            } else {
+              contentArray = [message.content]
+            }
+          } catch {
+            contentArray = [{ type: 'text', text: String(message.content) }]
+          }
+
+          // Filter to only show text type messages for now
+          const textMessages = contentArray.filter(item => item.type === 'text' && item.text)
+          
+          return textMessages.map((contentItem, contentIndex) => (
             <div
-              key={message.id || index}
+              key={`${message.id || messageIndex}-${contentIndex}`}
               className={cn(
                 'flex space-x-3',
                 isUser && 'flex-row-reverse space-x-reverse'
@@ -255,21 +205,38 @@ export const RealChatView = ({
                 )}>
                   {/* Message content */}
                   <div className="text-sm break-words">
-                    {renderMessageContent(message.content)}
+                    <div className="prose prose-sm max-w-none prose-gray">
+                      <ReactMarkdown 
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="text-sm">{children}</li>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                          pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+                        }}
+                      >
+                        {contentItem.text}
+                      </ReactMarkdown>
+                    </div>
                   </div>
 
-                  {/* Timestamp */}
-                  <div className={cn(
-                    'text-xs mt-1',
-                    isUser ? 'text-teal-100' : 'text-gray-500'
-                  )}>
-                    {dateUtils.formatTime(message.created_at)}
-                  </div>
+                  {/* Timestamp - only show on the first message part */}
+                  {contentIndex === 0 && (
+                    <div className={cn(
+                      'text-xs mt-1',
+                      isUser ? 'text-teal-100' : 'text-gray-500'
+                    )}>
+                      {dateUtils.formatTime(message.created_at)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          )
-        })}
+          ))
+        }).flat()}
         
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />
