@@ -1,10 +1,92 @@
 import React, { useRef, useEffect } from 'react'
-import { Bot, User, ChevronDown, RefreshCw } from 'lucide-react'
+import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
 import ReactMarkdown from 'react-markdown'
 
+// Helper function to render tool results
+const renderToolResult = (contentItem) => {
+  try {
+    const resultData = JSON.parse(contentItem.content[0].text)
+    
+    // Handle search results
+    if (resultData.search && resultData.search.products) {
+      const products = resultData.search.products
+      
+      return (
+        <div className="space-y-3">
+          <div className="text-sm text-gray-600 mb-3">
+            Found {resultData.search.total_results || products.length} products:
+          </div>
+          <div className="flex overflow-x-auto pb-2 gap-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            {products.map((product, index) => (
+              <div key={product.id || index} className="flex-shrink-0 w-64 border border-gray-200 rounded-lg p-3 bg-white">
+                <div className="space-y-3">
+                  {product.main_image && (
+                    <img 
+                      src={product.main_image} 
+                      alt={product.title}
+                      className="w-full h-32 object-cover rounded-md"
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                  )}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900 text-sm line-clamp-2" title={product.title}>
+                      {product.title}
+                    </h4>
+                    {product.price && (
+                      <div className="flex items-center space-x-1 text-sm text-gray-600">
+                        <DollarSign className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {product.price.min === product.price.max 
+                            ? `$${product.price.min}`
+                            : `$${product.price.min} - $${product.price.max}`
+                          }
+                        </span>
+                      </div>
+                    )}
+                    {product.url && (
+                      <a 
+                        href={product.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                      >
+                        <span>View Product</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {products.length > 10 && (
+            <div className="text-xs text-gray-500 text-center">
+              Scroll horizontally to see all {products.length} products
+            </div>
+          )}
+        </div>
+      )
+    }
+    
+    // Fallback for other tool results
+    return (
+      <div className="bg-gray-50 rounded-lg p-3 text-sm">
+        <pre className="whitespace-pre-wrap text-xs">
+          {JSON.stringify(resultData, null, 2)}
+        </pre>
+      </div>
+    )
+  } catch (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+        Failed to parse tool result
+      </div>
+    )
+  }
+}
 
 export const RealChatView = ({ 
   messages = [], 
@@ -168,10 +250,13 @@ export const RealChatView = ({
             contentArray = [{ type: 'text', text: String(message.content) }]
           }
 
-          // Filter to only show text type messages for now
-          const textMessages = contentArray.filter(item => item.type === 'text' && item.text)
+          // Filter to show text and tool result messages
+          const displayableMessages = contentArray.filter(item => 
+            (item.type === 'text' && item.text) || 
+            (item.type === 'mcp_tool_result' && !item.is_error)
+          )
           
-          return textMessages.map((contentItem, contentIndex) => (
+          return displayableMessages.map((contentItem, contentIndex) => (
             <div
               key={`${message.id || messageIndex}-${contentIndex}`}
               className={cn(
@@ -205,22 +290,26 @@ export const RealChatView = ({
                 )}>
                   {/* Message content */}
                   <div className="text-sm break-words">
-                    <div className="prose prose-sm max-w-none prose-gray">
-                      <ReactMarkdown 
-                        components={{
-                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                          li: ({ children }) => <li className="text-sm">{children}</li>,
-                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                          em: ({ children }) => <em className="italic">{children}</em>,
-                          code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
-                          pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
-                        }}
-                      >
-                        {contentItem.text}
-                      </ReactMarkdown>
-                    </div>
+                    {contentItem.type === 'text' ? (
+                      <div className="prose prose-sm max-w-none prose-gray">
+                        <ReactMarkdown 
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                            li: ({ children }) => <li className="text-sm">{children}</li>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            em: ({ children }) => <em className="italic">{children}</em>,
+                            code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                            pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+                          }}
+                        >
+                          {contentItem.text}
+                        </ReactMarkdown>
+                      </div>
+                    ) : contentItem.type === 'mcp_tool_result' ? (
+                      renderToolResult(contentItem)
+                    ) : null}
                   </div>
 
                   {/* Timestamp - only show on the first message part */}
