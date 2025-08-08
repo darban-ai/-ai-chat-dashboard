@@ -127,65 +127,6 @@ export const RealDashboard = () => {
               })}
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <button 
-                    onClick={() => window.location.href = '/chats'}
-                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <MessageSquare className="h-5 w-5 text-teal-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">View All Sessions</p>
-                        <p className="text-sm text-gray-500">Browse and manage chat sessions</p>
-                      </div>
-                    </div>
-                  </button>
-                  
-                  <button 
-                    onClick={() => window.location.href = '/settings'}
-                    className="w-full text-left p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Bot className="h-5 w-5 text-teal-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">API Settings</p>
-                        <p className="text-sm text-gray-500">Configure API endpoints and client ID</p>
-                      </div>
-                    </div>
-                  </button>
-                </CardContent>
-              </Card>
-
-              <Card>
-              <CardHeader>
-                <CardTitle>API Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Client ID</span>
-                    <span className="text-sm font-medium font-mono">cid-83f1d585a5e842249c1fd1f177c2dfac</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">API Base URL</span>
-                    <span className="text-sm font-medium">{import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Connection Status</span>
-                    <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-green-600'}`}>
-                      {error ? 'Disconnected' : 'Connected'}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </div>

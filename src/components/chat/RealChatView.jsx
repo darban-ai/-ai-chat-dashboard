@@ -3,7 +3,6 @@ import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign, Wrench } f
 import { Button } from '@/components/ui/Button'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
-import { processChatText } from '@/utils/textUtils'
 import ReactMarkdown from 'react-markdown'
 
 
@@ -262,9 +261,29 @@ export const RealChatView = ({
           // Filter to show text and specific tool result messages
           const displayableMessages = contentArray.filter(item => {
             if (item.type === 'text' && item.text) {
-              // Check if text has actual content after processing
-              const processedText = processChatText(item.text)
-              return processedText && processedText.trim().length > 0
+              // Decode and extract response content
+              let decoded = item.text
+                .replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
+                .replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")
+                .replace(/\\\\/g, '\\')
+              
+              // Extract response content if present
+              const responseMatch = decoded.match(/<response>(.*?)<\/response>/s)
+              if (responseMatch) {
+                return responseMatch[1].trim().length > 0
+              }
+              
+              // If has thinking blocks, filter them out and check if anything remains
+              if (decoded.includes('<thinking>')) {
+                const withoutThinking = decoded.replace(/<thinking>.*?<\/thinking>/gs, '').trim()
+                return withoutThinking.length > 0
+              }
+              
+              return decoded.trim().length > 0
             }
             if (item.type === 'mcp_tool_result' && !item.is_error) {
               // Find corresponding tool use to check the name
@@ -329,7 +348,29 @@ export const RealChatView = ({
                             pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
                           }}
                         >
-{processChatText(contentItem.text)}
+                          {(() => {
+                            let decoded = contentItem.text
+                              .replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
+                              .replace(/\\n/g, '\n')
+                              .replace(/\\t/g, '\t')
+                              .replace(/\\r/g, '\r')
+                              .replace(/\\"/g, '"')
+                              .replace(/\\'/g, "'")
+                              .replace(/\\\\/g, '\\')
+                            
+                            // Extract response content if present
+                            const responseMatch = decoded.match(/<response>(.*?)<\/response>/s)
+                            if (responseMatch) {
+                              return responseMatch[1].trim()
+                            }
+                            
+                            // Remove thinking blocks
+                            if (decoded.includes('<thinking>')) {
+                              return decoded.replace(/<thinking>.*?<\/thinking>/gs, '').trim()
+                            }
+                            
+                            return decoded
+                          })()}
                         </ReactMarkdown>
                       </div>
                     ) : contentItem.type === 'mcp_tool_result' ? (
