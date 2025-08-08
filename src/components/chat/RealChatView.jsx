@@ -3,6 +3,7 @@ import { Bot, User, ChevronDown, RefreshCw, ExternalLink, DollarSign, Wrench } f
 import { Button } from '@/components/ui/Button'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
+import { processChatText } from '@/utils/textUtils'
 import ReactMarkdown from 'react-markdown'
 
 
@@ -261,7 +262,9 @@ export const RealChatView = ({
           // Filter to show text and specific tool result messages
           const displayableMessages = contentArray.filter(item => {
             if (item.type === 'text' && item.text) {
-              return true
+              // Check if text has actual content after processing
+              const processedText = processChatText(item.text)
+              return processedText && processedText.trim().length > 0
             }
             if (item.type === 'mcp_tool_result' && !item.is_error) {
               // Find corresponding tool use to check the name
@@ -326,7 +329,7 @@ export const RealChatView = ({
                             pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
                           }}
                         >
-                          {contentItem.text}
+{processChatText(contentItem.text)}
                         </ReactMarkdown>
                       </div>
                     ) : contentItem.type === 'mcp_tool_result' ? (
