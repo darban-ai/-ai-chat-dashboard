@@ -688,6 +688,43 @@ class ApiService {
   }
 
   /**
+   * GET /getChatSummary
+   * Retrieves the latest daily chat summary for a specific client
+   * The API returns the latest available summary - current day if available, otherwise the most recent day with chats
+   * 
+   * @param {string} clientId - The client ID to retrieve summary for
+   * @param {Object} options - Optional parameters
+   * @param {number} options.timeout - Request timeout in milliseconds
+   * @returns {Promise<Object>} Chat summary response
+   * @throws {ValidationError} When parameters are invalid
+   * @throws {NotFoundError} When no summary found for the client
+   * @throws {AuthenticationError} When authentication is required
+   */
+  async getChatSummary(clientId, options = {}) {
+    try {
+      const { timeout } = options
+      
+      // Validate required parameters
+      this.validateRequired({ client_id: clientId })
+      this.validateTypes({ 
+        client_id: { value: clientId, type: 'string' }
+      })
+
+      const params = new URLSearchParams({
+        client_id: clientId.trim()
+      })
+
+      return await this.request(`/getChatSummary?${params}`, { timeout })
+      
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for getChatSummary: ${error.message}`)
+    }
+  }
+
+  /**
    * Health check endpoint
    * @returns {Promise<Object>} Health status
    */

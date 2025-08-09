@@ -3,9 +3,12 @@ import { SimpleLayout } from '@/components/layout/SimpleLayout'
 import { RealSessionList } from '@/components/chat/RealSessionList'
 import { RealChatView } from '@/components/chat/RealChatView'
 import { DatePicker } from '@/components/chat/DatePicker'
+import { ChatSummarySlider } from '@/components/chat/ChatSummarySlider'
 import { useRealChats } from '@/hooks/useRealChats'
 
 export const RealChats = () => {
+  const clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac'
+  
   const {
     sessions,
     messages,
@@ -14,7 +17,6 @@ export const RealChats = () => {
     loading,
     messagesLoading,
     error,
-    pagination,
     handleSessionSelect,
     handleDateChange,
     loadMoreSessions,
@@ -26,6 +28,7 @@ export const RealChats = () => {
 
   return (
     <SimpleLayout>
+      <ChatSummarySlider clientId={clientId} selectedDate={selectedDate} />
       {/* Left Panel - Date Picker and Session List */}
       <div className="w-80 flex-shrink-0 flex flex-col">
         {/* Date Picker - Always visible */}
