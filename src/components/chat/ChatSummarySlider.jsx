@@ -4,13 +4,11 @@ import ReactMarkdown from 'react-markdown'
 import { cn } from '@/utils/cn'
 import apiService from '@/services/apiService'
 
-export const ChatSummarySlider = ({ clientId, selectedDate }) => {
-  const [isOpen, setIsOpen] = useState(false)
+export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
+  const isOpen = true // Always open when component is rendered
   const [isLoading, setIsLoading] = useState(false)
   const [summary, setSummary] = useState(null)
   const [error, setError] = useState(null)
-  const [showIcon, setShowIcon] = useState(false)
-
   const fetchChatSummary = async () => {
     if (!clientId) return
     
@@ -29,13 +27,6 @@ export const ChatSummarySlider = ({ clientId, selectedDate }) => {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleToggle = () => {
-    if (!isOpen && !summary && !error) {
-      fetchChatSummary()
-    }
-    setIsOpen(!isOpen)
   }
 
   const formatDate = (dateString) => {
@@ -64,58 +55,15 @@ export const ChatSummarySlider = ({ clientId, selectedDate }) => {
   }
 
 
-  // Check if summary date matches selected date
+  // Load summary when component opens
   useEffect(() => {
-    const checkSummaryForSelectedDate = async () => {
-      if (!clientId || !selectedDate) {
-        setShowIcon(false)
-        return
-      }
-      
-      try {
-        const response = await apiService.getChatSummary(clientId)
-        
-        if (response && response.created_at) {
-          // Get the date part of the summary (YYYY-MM-DD format)
-          const summaryDate = new Date(response.created_at).toISOString().split('T')[0]
-          
-          // Compare with selected date
-          const datesMatch = summaryDate === selectedDate
-          setShowIcon(datesMatch)
-        } else {
-          setShowIcon(false)
-        }
-      } catch (err) {
-        setShowIcon(false)
-      }
+    if (isOpen && !summary && !error) {
+      fetchChatSummary()
     }
-
-    checkSummaryForSelectedDate()
-  }, [clientId, selectedDate])
-
-  // Don't render icon if it's not for today
-  if (!showIcon) {
-    return null
-  }
+  }, [isOpen])
 
   return (
     <>
-      {/* Toggle Button - positioned at the right edge of session list panel */}
-      <div className="absolute left-96 top-1/2 -translate-y-1/2 z-40">
-        <button
-          onClick={handleToggle}
-          className={cn(
-            'w-8 h-16 bg-white border border-gray-200 rounded-r-lg shadow-lg',
-            'flex items-center justify-center transition-all duration-200',
-            'hover:bg-gray-50 hover:border-gray-300',
-            isOpen && 'opacity-0 pointer-events-none'
-          )}
-          title="Chat Summary"
-        >
-          <FileText className="h-4 w-4 text-gray-600" />
-        </button>
-      </div>
-
       {/* Slider Panel - full width overlay */}
       <div
         className={cn(
@@ -131,7 +79,7 @@ export const ChatSummarySlider = ({ clientId, selectedDate }) => {
             <h2 className="text-lg font-semibold text-gray-900">Daily Summary</h2>
           </div>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={onToggle}
             className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X className="h-5 w-5 text-gray-500" />
@@ -249,12 +197,10 @@ export const ChatSummarySlider = ({ clientId, selectedDate }) => {
       </div>
 
       {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-25 z-20"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-25 z-20"
+        onClick={onToggle}
+      />
     </>
   )
 }

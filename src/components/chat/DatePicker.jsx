@@ -1,8 +1,5 @@
 import React from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Card, CardContent } from '@/components/ui/Card'
 import { dateUtils } from '@/utils/dateUtils'
 import { cn } from '@/utils/cn'
 
@@ -54,65 +51,78 @@ export const DatePicker = ({
   ]
 
   return (
-    <Card className={cn('', className)}>
-      <CardContent className="p-4">
-        <div className="space-y-4">
+    <div className={cn('bg-white rounded-lg border border-gray-200 shadow-sm', className)}>
+      <div className="p-3">
+        <div className="space-y-3">
+          {/* Header with title */}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+              Select Date
+            </h3>
+            <div className="text-xs text-gray-500">
+              {new Date(selectedDate).toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+            </div>
+          </div>
+
           {/* Quick date buttons */}
-          <div className="flex space-x-2">
+          <div className="grid grid-cols-2 gap-2">
             {quickDateOptions.map((option) => (
-              <Button
+              <button
                 key={option.value}
-                variant={option.isActive ? 'default' : 'outline'}
-                size="sm"
                 onClick={() => onDateChange(option.value)}
-                className="flex-1"
+                className={cn(
+                  'px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200',
+                  'border focus:outline-none focus:ring-1 focus:ring-blue-500',
+                  option.isActive
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                )}
               >
                 {option.label}
-              </Button>
+              </button>
             ))}
           </div>
 
           {/* Date navigation */}
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
+            <button
               onClick={handlePreviousDay}
-              className="h-9 w-9"
+              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+              title="Previous day"
             >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+              <ChevronLeft className="h-3 w-3 text-gray-600" />
+            </button>
 
-            <div className="flex-1 relative">
-              <Input
+            <div className="flex-1">
+              <input
                 type="date"
                 value={selectedDate}
                 onChange={handleDateInputChange}
                 max={today}
+                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
               />
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
+            <button
               onClick={handleNextDay}
               disabled={selectedDate >= today}
-              className="h-9 w-9"
+              className={cn(
+                'p-1.5 rounded-md transition-colors border',
+                selectedDate >= today
+                  ? 'text-gray-300 border-gray-100 cursor-not-allowed'
+                  : 'hover:bg-gray-100 border-gray-200 text-gray-600'
+              )}
+              title="Next day"
             >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Selected date display */}
-          <div className="text-center">
-            <div className="inline-block bg-teal-500 text-white px-4 py-2 rounded-lg">
-              <p className="font-medium">
-                {selectedDate === today ? 'Today' : selectedDate === yesterdayString ? 'Yesterday' : dateUtils.formatDate(selectedDate, 'MMMM dd yyyy')}
-              </p>
-            </div>
+              <ChevronRight className="h-3 w-3" />
+            </button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
