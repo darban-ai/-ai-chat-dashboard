@@ -44,18 +44,15 @@ export const RealChats = () => {
       try {
         const response = await apiService.getChatSummary(clientId)
         
-        if (response && response.summary_date) {
-          // Get the date part of the summary (YYYY-MM-DD format)
-          const summaryDate = response.summary_date
+        if (response && response.summaries && Array.isArray(response.summaries) && response.summaries.length > 0) {
+          // Find summary for the selected date
+          const matchingSummary = response.summaries.find(summary => summary.summary_date === selectedDate)
           
-          // Compare with selected date
-          const datesMatch = summaryDate === selectedDate
-          setHasValidSummary(datesMatch)
-          
-          // Auto-open summary if date matches
-          if (datesMatch) {
-            setIsSummaryOpen(true)
+          if (matchingSummary) {
+            setHasValidSummary(true)
+            setIsSummaryOpen(true) // Auto-open if summary exists for selected date
           } else {
+            setHasValidSummary(false)
             setIsSummaryOpen(false)
           }
         } else {

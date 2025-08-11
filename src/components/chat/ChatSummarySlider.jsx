@@ -8,7 +8,7 @@ import apiService from '@/services/apiService'
 export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
   const isOpen = true // Always open when component is rendered
   const [isLoading, setIsLoading] = useState(false)
-  const [summary, setSummary] = useState(null)
+  const [summaries, setSummaries] = useState([])
   const [error, setError] = useState(null)
   const fetchChatSummary = async () => {
     if (!clientId) return
@@ -18,7 +18,7 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
     
     try {
       const response = await apiService.getChatSummary(clientId)
-      setSummary(response)
+      setSummaries(response && response.summaries && Array.isArray(response.summaries) ? response.summaries : [])
     } catch (err) {
       if (err.status === 404) {
         setError('No chat summaries available. Start chatting to generate daily summaries!')
@@ -29,6 +29,9 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
       setIsLoading(false)
     }
   }
+
+  // Find the summary for the selected date
+  const currentSummary = summaries.find(summary => summary.summary_date === selectedDate)
 
   const formatDate = (dateString) => {
     // Use parseISO to properly handle ISO date strings without timezone issues
@@ -57,9 +60,9 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
   }
 
 
-  // Load summary when component opens
+  // Load summaries when component opens
   useEffect(() => {
-    if (isOpen && !summary && !error) {
+    if (isOpen && summaries.length === 0 && !error) {
       fetchChatSummary()
     }
   }, [isOpen])
@@ -109,14 +112,14 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
             </div>
           )}
 
-          {summary && (
+          {currentSummary && (
             <div>
               {/* Date Header Card */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-teal-600" />
                   <span className="text-lg font-semibold text-gray-900">
-                    {formatDate(summary.summary_date)}
+                    {formatDate(currentSummary.summary_date)}
                   </span>
                 </div>
               </div>
@@ -170,14 +173,14 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
                       ),
                     }}
                   >
-                    {summary.summary}
+                    {currentSummary.summary}
                   </ReactMarkdown>
                 </div>
               </div>
             </div>
           )}
 
-          {!isLoading && !error && !summary && (
+          {!isLoading && !error && !currentSummary && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
