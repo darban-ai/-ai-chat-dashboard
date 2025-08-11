@@ -63,31 +63,26 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
   }, [isOpen])
 
   return (
-    <>
-      {/* Slider Panel - full width overlay */}
-      <div
-        className={cn(
-          'fixed left-0 top-0 h-screen w-full bg-white shadow-2xl z-30',
-          'transform transition-transform duration-300 ease-in-out flex flex-col',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
+    <div className="flex-1 bg-gray-50 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Daily Summary</h2>
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-6 w-6 text-teal-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Daily Summary</h2>
+            </div>
+            <button
+              onClick={onToggle}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Close summary"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
           </div>
-          <button
-            onClick={onToggle}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto max-h-full bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -113,7 +108,7 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
           )}
 
           {summary && (
-            <div className="p-6">
+            <div>
               {/* Date Header Card */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
                 <div className="flex items-center gap-3">
@@ -181,26 +176,19 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
           )}
 
           {!isLoading && !error && !summary && (
-            <div className="text-center py-12 px-6">
-              <div className="bg-gray-100 rounded-lg p-8">
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
                 <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 text-base font-medium mb-2">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No Summary Available
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Chat summaries will appear here when available for the selected date
+                </h3>
+                <p className="text-gray-500">
+                  Chat summaries will appear here when available for the selected date.
                 </p>
               </div>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-25 z-20"
-        onClick={onToggle}
-      />
-    </>
+    </div>
   )
 }

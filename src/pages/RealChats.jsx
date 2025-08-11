@@ -37,6 +37,7 @@ export const RealChats = () => {
     const checkSummaryForSelectedDate = async () => {
       if (!clientId || !selectedDate) {
         setHasValidSummary(false)
+        setIsSummaryOpen(false)
         return
       }
       
@@ -50,11 +51,20 @@ export const RealChats = () => {
           // Compare with selected date
           const datesMatch = summaryDate === selectedDate
           setHasValidSummary(datesMatch)
+          
+          // Auto-open summary if date matches
+          if (datesMatch) {
+            setIsSummaryOpen(true)
+          } else {
+            setIsSummaryOpen(false)
+          }
         } else {
           setHasValidSummary(false)
+          setIsSummaryOpen(false)
         }
       } catch (err) {
         setHasValidSummary(false)
+        setIsSummaryOpen(false)
       }
     }
 
@@ -67,13 +77,6 @@ export const RealChats = () => {
 
   return (
     <SimpleLayout>
-      {isSummaryOpen && (
-        <ChatSummarySlider 
-          clientId={clientId} 
-          selectedDate={selectedDate} 
-          onToggle={handleSummaryToggle} 
-        />
-      )}
       {/* Left Panel Container with Toggle */}
       <div className="relative flex">
         {/* Left Panel - Date Picker and Session List */}
@@ -150,14 +153,22 @@ export const RealChats = () => {
         </button>
       </div>
       
-      {/* Chat View */}
-      <RealChatView
-        messages={messages}
-        selectedSession={selectedSession}
-        loading={messagesLoading}
-        hasMore={hasMoreMessages}
-        onLoadMore={loadMoreMessages}
-      />
+      {/* Main Content Area - Chat View or Summary */}
+      {isSummaryOpen ? (
+        <ChatSummarySlider 
+          clientId={clientId} 
+          selectedDate={selectedDate} 
+          onToggle={handleSummaryToggle} 
+        />
+      ) : (
+        <RealChatView
+          messages={messages}
+          selectedSession={selectedSession}
+          loading={messagesLoading}
+          hasMore={hasMoreMessages}
+          onLoadMore={loadMoreMessages}
+        />
+      )}
     </SimpleLayout>
   )
 }

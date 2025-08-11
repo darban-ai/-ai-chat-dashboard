@@ -39,14 +39,14 @@ export const DatePicker = ({
 
   const quickDateOptions = [
     {
-      label: 'Today',
-      value: today,
-      isActive: selectedDate === today
-    },
-    {
       label: 'Yesterday',
       value: yesterdayString,
       isActive: selectedDate === yesterdayString
+    },
+    {
+      label: 'Today',
+      value: today,
+      isActive: selectedDate === today
     }
   ]
 
