@@ -75,6 +75,18 @@ export const RealChats = () => {
     setIsSummaryOpen(!isSummaryOpen)
   }
 
+  // Auto-close summary when session is selected
+  const handleSessionSelectWithSummaryClose = (session) => {
+    setIsSummaryOpen(false)
+    handleSessionSelect(session)
+  }
+
+  // Auto-close summary when date is changed
+  const handleDateChangeWithSummaryClose = (date) => {
+    setIsSummaryOpen(false)
+    handleDateChange(date)
+  }
+
   return (
     <SimpleLayout>
       {/* Left Panel Container with Toggle */}
@@ -88,7 +100,7 @@ export const RealChats = () => {
               <div className="p-3 bg-white border-r border-gray-200">
                 <DatePicker 
                   selectedDate={selectedDate}
-                  onDateChange={handleDateChange}
+                  onDateChange={handleDateChangeWithSummaryClose}
                 />
                 
                 {/* Chat Summary Button */}
@@ -107,7 +119,7 @@ export const RealChats = () => {
                   <RealSessionList
                     sessions={sessions}
                     selectedSession={selectedSession}
-                    onSessionSelect={handleSessionSelect}
+                    onSessionSelect={handleSessionSelectWithSummaryClose}
                     loading={loading}
                     hasMore={hasMoreSessions}
                     onLoadMore={loadMoreSessions}

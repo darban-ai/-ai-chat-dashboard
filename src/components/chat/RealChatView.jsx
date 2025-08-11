@@ -346,6 +346,16 @@ export const RealChatView = ({
                             em: ({ children }) => <em className="italic">{children}</em>,
                             code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
                             pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+                            a: ({ children, href }) => (
+                              <a 
+                                href={href} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:text-blue-800 underline font-medium transition-colors"
+                              >
+                                {children}
+                              </a>
+                            ),
                           }}
                         >
                           {(() => {

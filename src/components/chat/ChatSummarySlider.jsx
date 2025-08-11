@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, FileText, Calendar } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { parseISO } from 'date-fns'
 import { cn } from '@/utils/cn'
 import apiService from '@/services/apiService'
 
@@ -30,7 +31,8 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
   }
 
   const formatDate = (dateString) => {
-    const summaryDate = new Date(dateString)
+    // Use parseISO to properly handle ISO date strings without timezone issues
+    const summaryDate = parseISO(dateString)
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(today.getDate() - 1)
