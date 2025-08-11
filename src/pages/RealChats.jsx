@@ -15,6 +15,10 @@ export const RealChats = () => {
   const [hasValidSummary, setHasValidSummary] = useState(false)
   const [isLeftPanelExpanded, setIsLeftPanelExpanded] = useState(true)
   
+  // Cache for summaries to avoid repeated API calls
+  const [summaryCache, setSummaryCache] = useState(null)
+  const [cacheTimestamp, setCacheTimestamp] = useState(null)
+  
   const {
     sessions,
     messages,
@@ -32,6 +36,15 @@ export const RealChats = () => {
     hasMoreMessages,
   } = useRealChats()
 
+  // Cache validity duration (5 minutes)
+  const CACHE_DURATION = 5 * 60 * 1000
+
+  // Check if cache is still valid
+  const isCacheValid = () => {
+    if (!summaryCache || !cacheTimestamp) return false
+    return Date.now() - cacheTimestamp < CACHE_DURATION
+  }
+
   // Check if summary exists for selected date
   useEffect(() => {
     const checkSummaryForSelectedDate = async () => {
@@ -41,10 +54,29 @@ export const RealChats = () => {
         return
       }
       
+      // Check cache first
+      if (isCacheValid() && summaryCache) {
+        const matchingSummary = summaryCache.find(summary => summary.summary_date === selectedDate)
+        
+        if (matchingSummary) {
+          setHasValidSummary(true)
+          setIsSummaryOpen(true)
+        } else {
+          setHasValidSummary(false)
+          setIsSummaryOpen(false)
+        }
+        return
+      }
+      
+      // Cache miss or expired - fetch from API
       try {
         const response = await apiService.getChatSummary(clientId)
         
         if (response && response.summaries && Array.isArray(response.summaries) && response.summaries.length > 0) {
+          // Update cache
+          setSummaryCache(response.summaries)
+          setCacheTimestamp(Date.now())
+          
           // Find summary for the selected date
           const matchingSummary = response.summaries.find(summary => summary.summary_date === selectedDate)
           
@@ -66,10 +98,16 @@ export const RealChats = () => {
     }
 
     checkSummaryForSelectedDate()
-  }, [clientId, selectedDate])
+  }, [clientId, selectedDate, summaryCache, cacheTimestamp])
 
   const handleSummaryToggle = () => {
     setIsSummaryOpen(!isSummaryOpen)
+  }
+
+  // Function to invalidate cache manually (e.g., when new data might be available)
+  const invalidateCache = () => {
+    setSummaryCache(null)
+    setCacheTimestamp(null)
   }
 
   // Auto-close summary when session is selected
@@ -167,7 +205,9 @@ export const RealChats = () => {
         <ChatSummarySlider 
           clientId={clientId} 
           selectedDate={selectedDate} 
-          onToggle={handleSummaryToggle} 
+          onToggle={handleSummaryToggle}
+          cachedSummaries={summaryCache}
+          isCacheValid={isCacheValid()}
         />
       ) : (
         <RealChatView

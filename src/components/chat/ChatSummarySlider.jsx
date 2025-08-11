@@ -5,7 +5,7 @@ import { parseISO } from 'date-fns'
 import { cn } from '@/utils/cn'
 import apiService from '@/services/apiService'
 
-export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
+export const ChatSummarySlider = ({ clientId, selectedDate, onToggle, cachedSummaries, isCacheValid }) => {
   const isOpen = true // Always open when component is rendered
   const [isLoading, setIsLoading] = useState(false)
   const [summaries, setSummaries] = useState([])
@@ -13,6 +13,13 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
   const fetchChatSummary = async () => {
     if (!clientId) return
     
+    // Use cached data if available and valid
+    if (isCacheValid && cachedSummaries && Array.isArray(cachedSummaries)) {
+      setSummaries(cachedSummaries)
+      return
+    }
+    
+    // Only fetch from API if cache is invalid or missing
     setIsLoading(true)
     setError(null)
     
@@ -60,12 +67,19 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
   }
 
 
-  // Load summaries when component opens
+  // Load summaries when component opens or cache changes
   useEffect(() => {
-    if (isOpen && summaries.length === 0 && !error) {
+    if (isOpen) {
       fetchChatSummary()
     }
-  }, [isOpen])
+  }, [isOpen, cachedSummaries, isCacheValid])
+
+  // Update summaries when cached data changes
+  useEffect(() => {
+    if (isCacheValid && cachedSummaries && Array.isArray(cachedSummaries)) {
+      setSummaries(cachedSummaries)
+    }
+  }, [cachedSummaries, isCacheValid])
 
   return (
     <div className="flex-1 bg-gray-50 flex flex-col">
