@@ -44,9 +44,9 @@ export const RealChats = () => {
       try {
         const response = await apiService.getChatSummary(clientId)
         
-        if (response && response.created_at) {
+        if (response && response.summary_date) {
           // Get the date part of the summary (YYYY-MM-DD format)
-          const summaryDate = new Date(response.created_at).toISOString().split('T')[0]
+          const summaryDate = response.summary_date
           
           // Compare with selected date
           const datesMatch = summaryDate === selectedDate

@@ -116,7 +116,7 @@ export const ChatSummarySlider = ({ clientId, selectedDate, onToggle }) => {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-teal-600" />
                   <span className="text-lg font-semibold text-gray-900">
-                    {formatDate(summary.created_at)}
+                    {formatDate(summary.summary_date)}
                   </span>
                 </div>
               </div>
