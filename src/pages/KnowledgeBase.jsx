@@ -208,9 +208,16 @@ export const KnowledgeBase = () => {
         existingContent = ''
       }
       
-      // Append the new Q&A to the existing content with proper line breaks
-      const separator = existingContent && !existingContent.endsWith('\n\n') ? '\n\n' : ''
-      const newQA = `Q: ${gapData.question}\nA: ${gapData.answer}\n\n`
+      // Append the new Q&A to the existing content with proper markdown format
+      const separator = existingContent ? '\n' : ''
+      const newQA = `—
+
+## Question
+${gapData.question}
+
+## Answer
+${gapData.answer}
+`
       const updatedContent = existingContent + separator + newQA
       
       // Use the createKnowledgeBaseDoc API with edit type to update the knowledge-gaps-qa.md file

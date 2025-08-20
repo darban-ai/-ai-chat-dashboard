@@ -55,9 +55,16 @@ const handleCreateCustomGap = async (gapData) => {
       existingContent = ''
     }
     
-    // Append new Q&A to existing content with proper formatting
-    const separator = existingContent && !existingContent.endsWith('\n\n') ? '\n\n' : ''
-    const newQA = `Q: ${gapData.question}\nA: ${gapData.answer}\n\n`
+    // Append new Q&A to existing content with proper markdown formatting
+    const separator = existingContent ? '\n' : ''
+    const newQA = `—
+
+## Question
+${gapData.question}
+
+## Answer
+${gapData.answer}
+`
     const updatedContent = existingContent + separator + newQA
     
     // Update the file using the edit API
@@ -77,21 +84,35 @@ const handleCreateCustomGap = async (gapData) => {
 **Key Features**:
 - **Content Preservation**: Reads existing file content before appending
 - **Graceful Creation**: Handles missing file by creating new one
-- **Proper Formatting**: Ensures proper line breaks between Q&A pairs
-- **Smart Separation**: Adds `\n\n` separator only when needed
+- **Markdown Formatting**: Uses proper markdown headers and separators
+- **Clean Separation**: Uses `—` separator between entries
 - **Backend Storage**: Uses `knowledge-base-content/homespice.com/knowledge-gaps-qa.md`
 
 **File Format**:
-```
-Q: First question here
-A: First answer here
+```markdown
+—
 
-Q: Second question here
-A: Second answer here
+## Question
+What is the first question?
 
-Q: Third question here
-A: Third answer here
+## Answer
+This is the first answer.
 
+—
+
+## Question  
+What is the second question?
+
+## Answer
+This is the second answer.
+
+—
+
+## Question
+What is the third question?
+
+## Answer
+This is the third answer.
 ```
 
 ### 3. Component Integration (`KnowledgeBase.jsx`)
