@@ -122,7 +122,8 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
   return (
     <div 
       ref={questionsContainerRef} 
-      className="space-y-2 overflow-y-auto scrollbar-hide h-full"
+      className="space-y-2 overflow-y-auto h-full scrollbar-hide"
+      style={{ scrollBehavior: 'smooth' }}
     >
         {gaps.map((gap) => {
           const isExpanded = expandedGap === gap.id
