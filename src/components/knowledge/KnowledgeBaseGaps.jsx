@@ -36,6 +36,16 @@ export const KnowledgeBaseGaps = ({ gaps, onAnswerGap, onDeleteGap, loading, for
       setExpandedGap(null)
     } else {
       setExpandedGap(gapId)
+      
+      // Pre-fill answer if the gap already has one (for custom gaps)
+      const gap = gaps.find(g => g.id === gapId)
+      if (gap && gap.answer && !answerTexts[gapId]) {
+        setAnswerTexts(prev => ({
+          ...prev,
+          [gapId]: gap.answer
+        }))
+      }
+      
       // Focus textarea after expansion
       setTimeout(() => {
         if (textareaRef.current) {

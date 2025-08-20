@@ -38,6 +38,7 @@ export const KnowledgeBase = () => {
     loadMore: loadMoreGaps,
     answerGap,
     deleteGap,
+    addCustomGap,
     refresh: refreshGaps,
     formatDate,
   } = useKnowledgeBaseGaps()
@@ -197,19 +198,8 @@ export const KnowledgeBase = () => {
   const handleCreateCustomGap = async (gapData) => {
     setCreateGapLoading(true)
     try {
-      // For now, we'll create a mock gap since we need to check the API structure
-      // This should be replaced with actual API call
-      const newGap = {
-        id: Date.now().toString(),
-        question: gapData.question,
-        answer: gapData.answer,
-        created_at: new Date().toISOString(),
-        is_custom: true
-      }
-      
-      // Add to the gaps list - this should be handled by the backend
-      // For now, we'll just refresh the gaps to simulate success
-      await refreshGaps()
+      // Add custom gap directly to the knowledge gaps list
+      addCustomGap(gapData)
       
     } catch (error) {
       throw error

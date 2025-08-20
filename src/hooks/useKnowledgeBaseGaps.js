@@ -105,9 +105,15 @@ export const useKnowledgeBaseGaps = () => {
       setError(null)
       setErrorType(null)
       
-      await apiService.answerKnowledgeBaseGap(clientId, gapId, answer)
+      // Check if it's a custom gap (local only)
+      const isCustomGap = gapId.startsWith('custom-')
       
-      // Remove the answered gap from the local state
+      if (!isCustomGap) {
+        // Only call API for server-side gaps
+        await apiService.answerKnowledgeBaseGap(clientId, gapId, answer)
+      }
+      
+      // Remove the answered gap from the local state (works for both custom and server gaps)
       setGaps(prev => prev.filter(gap => gap.id !== gapId))
       
       // Update pagination count
@@ -129,9 +135,15 @@ export const useKnowledgeBaseGaps = () => {
       setError(null)
       setErrorType(null)
       
-      await apiService.deleteKnowledgeBaseGap(clientId, gapId)
+      // Check if it's a custom gap (local only)
+      const isCustomGap = gapId.startsWith('custom-')
       
-      // Remove the deleted gap from the local state
+      if (!isCustomGap) {
+        // Only call API for server-side gaps
+        await apiService.deleteKnowledgeBaseGap(clientId, gapId)
+      }
+      
+      // Remove the deleted gap from the local state (works for both custom and server gaps)
       setGaps(prev => prev.filter(gap => gap.id !== gapId))
       
       // Update pagination count
@@ -146,6 +158,28 @@ export const useKnowledgeBaseGaps = () => {
       throw err // Re-throw for component handling
     }
   }, [clientId, handleError])
+
+  // Add custom gap directly to the local state
+  const addCustomGap = useCallback((gapData) => {
+    const newGap = {
+      id: `custom-${Date.now()}`,
+      question: gapData.question,
+      answer: gapData.answer, // Store the answer so it can be pre-filled
+      created_at: new Date().toISOString(),
+      is_custom: true
+    }
+    
+    // Add to the beginning of the gaps array
+    setGaps(prev => [newGap, ...prev])
+    
+    // Update pagination count
+    setPagination(prev => ({
+      ...prev,
+      count: prev.count + 1
+    }))
+    
+    return newGap
+  }, [])
 
   // Refresh gaps
   const refresh = useCallback(() => {
@@ -177,6 +211,7 @@ export const useKnowledgeBaseGaps = () => {
     loadMore,
     answerGap,
     deleteGap,
+    addCustomGap,
     refresh,
     
     // Utilities
