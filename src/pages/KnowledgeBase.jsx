@@ -38,7 +38,6 @@ export const KnowledgeBase = () => {
     loadMore: loadMoreGaps,
     answerGap,
     deleteGap,
-    addCustomGap,
     refresh: refreshGaps,
     formatDate,
   } = useKnowledgeBaseGaps()
@@ -198,8 +197,30 @@ export const KnowledgeBase = () => {
   const handleCreateCustomGap = async (gapData) => {
     setCreateGapLoading(true)
     try {
-      // Add custom gap directly to the knowledge gaps list
-      addCustomGap(gapData)
+      // First, get the existing content of the knowledge-gaps-qa.md file
+      let existingContent = ''
+      try {
+        const docContent = await getDocumentContent('knowledge-base-content/homespice.com/knowledge-gaps-qa.md')
+        existingContent = docContent || ''
+      } catch (error) {
+        // File might not exist yet, that's okay - we'll create it with initial content
+        console.log('Knowledge gaps file not found, creating new one')
+        existingContent = ''
+      }
+      
+      // Append the new Q&A to the existing content with proper line breaks
+      const separator = existingContent && !existingContent.endsWith('\n\n') ? '\n\n' : ''
+      const newQA = `Q: ${gapData.question}\nA: ${gapData.answer}\n\n`
+      const updatedContent = existingContent + separator + newQA
+      
+      // Use the createKnowledgeBaseDoc API with edit type to update the knowledge-gaps-qa.md file
+      await createDocument('edit', {
+        key: 'knowledge-base-content/homespice.com/knowledge-gaps-qa.md',
+        content: updatedContent
+      })
+      
+      // Refresh gaps to show the new gap from backend
+      await refreshGaps()
       
     } catch (error) {
       throw error
