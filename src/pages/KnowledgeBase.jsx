@@ -270,7 +270,7 @@ ${gapData.answer}
               <span>Knowledge Gaps</span>
               {gaps.length > 0 && (
                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                  {gaps.length}
+                  {gaps.length}{hasMoreGaps ? '+' : ''}
                 </span>
               )}
             </button>
@@ -531,7 +531,7 @@ ${gapData.answer}
                         <span>Add Custom Gap</span>
                       </Button>
                       <span className="text-sm text-gray-500">
-                        {gaps.length} question{gaps.length !== 1 ? 's' : ''} need{gaps.length === 1 ? 's' : ''} answering
+                        {gaps.length}{hasMoreGaps ? '+' : ''} question{gaps.length !== 1 ? 's' : ''} need{gaps.length === 1 ? 's' : ''} answering
                       </span>
                     </div>
                   </div>

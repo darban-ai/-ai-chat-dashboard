@@ -7,7 +7,7 @@ export const useKnowledgeBaseGaps = () => {
   const [error, setError] = useState(null)
   const [errorType, setErrorType] = useState(null)
   const [pagination, setPagination] = useState({
-    limit: 10,
+    limit: 30,
     offset: 0,
     count: 0
   })
@@ -56,7 +56,7 @@ export const useKnowledgeBaseGaps = () => {
       setError(null)
       setErrorType(null)
       
-      const { limit = 10, offset = 0 } = options
+      const { limit = 30, offset = 0 } = options
       
       const response = await apiService.getKnowledgeBaseGaps(clientId, {
         limit,
