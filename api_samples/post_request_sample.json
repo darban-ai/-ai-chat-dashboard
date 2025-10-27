@@ -1,0 +1,31 @@
+{
+  "instructions": {
+    "about": {
+      "heading": "About the Business",
+      "content": "Updated business description goes here..."
+    },
+    "tone": {
+      "heading": "Tone & Brand Voice",
+      "content": "Updated tone guidelines go here..."
+    },
+    "response_style": {
+      "heading": "Response Style",
+      "content": "Updated response style goes here..."
+    },
+    "restrictions": {
+      "heading": "Restrictions & Language Rules",
+      "content": "Updated restrictions go here..."
+    },
+    "contact_info": {
+      "heading": "Contact Information",
+      "content": {
+        "email": "updated@example.com",
+        "phone": "+1 800 111 2222"
+      }
+    },
+    "custom_instructions": {
+      "heading": "Custom Instructions",
+      "content": "Updated custom instructions go here..."
+    }
+  }
+}

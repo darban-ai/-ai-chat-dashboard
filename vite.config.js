@@ -13,5 +13,12 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     strictPort: true,
+    proxy: {
+      '/instructions-api': {
+        target: 'https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/instructions-api/, ''),
+      },
+    },
   },
 })

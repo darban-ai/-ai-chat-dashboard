@@ -3,6 +3,7 @@
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const INSTRUCTIONS_API_BASE_URL = import.meta.env.VITE_INSTRUCTIONS_API_BASE_URL || (import.meta.env.DEV ? '/instructions-api' : 'https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production')
 
 // Custom Error Classes for better error categorization
 class ApiError extends Error {
@@ -76,6 +77,7 @@ class TimeoutError extends ApiError {
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL
+    this.instructionsBaseURL = INSTRUCTIONS_API_BASE_URL
     this.defaultTimeout = 30000 // 30 seconds
     this.retryAttempts = 3
     this.retryDelay = 1000 // 1 second
@@ -165,64 +167,61 @@ class ApiService {
    * Main request method with comprehensive error handling
    */
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`
-    const timeout = options.timeout || this.defaultTimeout
-    
+    const { baseURL, timeout, ...restOptions } = options
+    const url = `${(baseURL || this.baseURL)}${endpoint}`
+    const requestTimeout = timeout || this.defaultTimeout
+
+    const { headers, ...fetchOptions } = restOptions
+
     const config = {
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...headers,
       },
-      ...options,
+      ...fetchOptions,
     }
 
     const requestFn = async () => {
-      const { controller, timeoutId } = this.createTimeoutController(timeout)
-      
+      const { controller, timeoutId } = this.createTimeoutController(requestTimeout)
+
       try {
         const response = await fetch(url, {
           ...config,
           signal: controller.signal
         })
-        
+
         clearTimeout(timeoutId)
-        
+
         if (!response.ok) {
           throw await this.parseErrorResponse(response)
         }
-        
-        // Handle empty responses
+
         const contentType = response.headers.get('content-type')
         if (contentType && contentType.includes('application/json')) {
           return await response.json()
         } else {
           return await response.text()
         }
-        
+
       } catch (error) {
         clearTimeout(timeoutId)
-        
-        // Handle AbortError (timeout)
+
         if (error.name === 'AbortError') {
-          throw new TimeoutError(`Request timeout after ${timeout}ms`)
+          throw new TimeoutError(`Request timeout after ${requestTimeout}ms`)
         }
-        
-        // Handle network errors
+
         if (error instanceof TypeError && error.message.includes('fetch')) {
           throw new NetworkError(`Network error: ${error.message}`)
         }
-        
-        // Re-throw API errors as-is
+
         if (error instanceof ApiError) {
           throw error
         }
-        
-        // Handle unexpected errors
+
         throw new ApiError(`Unexpected error: ${error.message}`, 0, 'UNKNOWN_ERROR')
       }
     }
 
-    // Apply retry logic
     return this.retryRequest(requestFn)
   }
 
@@ -396,6 +395,57 @@ class ApiService {
         throw error
       }
       throw new ValidationError(`Invalid parameters for listKnowledgeBaseDocs: ${error.message}`)
+    }
+  }
+
+  async getClientInstructions(clientId, options = {}) {
+    try {
+      const { timeout } = options
+      this.validateRequired({ client_id: clientId })
+      this.validateTypes({
+        client_id: { value: clientId, type: 'string' }
+      })
+      const trimmedClientId = clientId.trim()
+      if (!trimmedClientId) {
+        throw new ValidationError('client_id must be a non-empty string')
+      }
+      return await this.request(`/client-configs/${encodeURIComponent(trimmedClientId)}/instructions`, {
+        timeout,
+        baseURL: this.instructionsBaseURL
+      })
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for getClientInstructions: ${error.message}`)
+    }
+  }
+
+  async updateClientInstructions(clientId, instructions, options = {}) {
+    try {
+      const { timeout } = options
+      this.validateRequired({ client_id: clientId })
+      this.validateTypes({
+        client_id: { value: clientId, type: 'string' }
+      })
+      if (typeof instructions !== 'object' || instructions === null || Array.isArray(instructions)) {
+        throw new ValidationError('instructions must be an object')
+      }
+      const trimmedClientId = clientId.trim()
+      if (!trimmedClientId) {
+        throw new ValidationError('client_id must be a non-empty string')
+      }
+      return await this.request(`/client-configs/${encodeURIComponent(trimmedClientId)}/instructions`, {
+        method: 'POST',
+        body: JSON.stringify({ instructions }),
+        timeout,
+        baseURL: this.instructionsBaseURL
+      })
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ValidationError(`Invalid parameters for updateClientInstructions: ${error.message}`)
     }
   }
 

@@ -1,0 +1,127 @@
+{
+  "description": "Client Instructions API Schema Reference",
+  "version": "1.0",
+  "structure": {
+    "instructions": {
+      "type": "object",
+      "description": "Client-specific AI assistant instructions",
+      "properties": {
+        "about": {
+          "type": "object",
+          "description": "Business description and background",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "example": "About the Business",
+              "description": "Display heading for this section"
+            },
+            "content": {
+              "type": "string",
+              "description": "Markdown-formatted business description"
+            }
+          },
+          "required": ["heading", "content"]
+        },
+        "tone": {
+          "type": "object",
+          "description": "Brand voice and communication style",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "example": "Tone & Brand Voice"
+            },
+            "content": {
+              "type": "string",
+              "description": "Markdown-formatted tone guidelines"
+            }
+          },
+          "required": ["heading", "content"]
+        },
+        "response_style": {
+          "type": "object",
+          "description": "Response formatting and length preferences",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "example": "Response Style"
+            },
+            "content": {
+              "type": "string",
+              "description": "Markdown-formatted style guidelines"
+            }
+          },
+          "required": ["heading", "content"]
+        },
+        "restrictions": {
+          "type": "object",
+          "description": "What NOT to disclose and language rules",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "example": "Restrictions & Language Rules"
+            },
+            "content": {
+              "type": "string",
+              "description": "Markdown-formatted restriction rules"
+            }
+          },
+          "required": ["heading", "content"]
+        },
+        "contact_info": {
+          "type": "object",
+          "description": "Customer service contact details",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "example": "Contact Information"
+            },
+            "content": {
+              "type": "object",
+              "description": "Structured contact information",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "phone": {
+                  "type": "string",
+                  "pattern": "^\\+?[0-9\\s\\-\\(\\)]+$"
+                }
+              },
+              "required": ["email", "phone"]
+            }
+          },
+          "required": ["heading", "content"]
+        },
+        "custom_instructions": {
+          "type": "object",
+          "description": "Engagement rules, escalation logic, edge cases",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "example": "Custom Instructions"
+            },
+            "content": {
+              "type": "string",
+              "description": "Markdown-formatted custom instructions"
+            }
+          },
+          "required": ["heading", "content"]
+        }
+      },
+      "required": ["about", "tone", "response_style", "restrictions", "contact_info", "custom_instructions"]
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Default fallback instructions (same structure as instructions)",
+      "properties": "Same as instructions object above"
+    }
+  },
+  "notes": [
+    "All text content supports GitHub-flavored Markdown",
+    "contact_info.content is the only structured object (email/phone)",
+    "All other content fields are free-form markdown strings",
+    "Defaults are shown alongside client values in the UI",
+    "Empty/null client fields fall back to defaults"
+  ]
+}

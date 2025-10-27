@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom'
 import { 
   LayoutDashboard, 
   MessageSquare, 
-  BookOpen
+  BookOpen,
+  Settings
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
@@ -22,6 +23,11 @@ const navigation = [
     name: 'Knowledge Base',
     href: '/knowledge-base',
     icon: BookOpen,
+  },
+  {
+    name: 'Client Access',
+    href: '/client-access',
+    icon: Settings,
   },
 ]
 

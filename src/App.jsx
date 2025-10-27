@@ -4,6 +4,7 @@ import { RealDashboard } from './pages/RealDashboard'
 import { RealChats } from './pages/RealChats'
 import { KnowledgeBase } from './pages/KnowledgeBase'
 import { SimpleSettings } from './pages/SimpleSettings'
+import { ClientAccess } from './pages/ClientAccess'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/chats" element={<RealChats />} />
         <Route path="/knowledge-base" element={<KnowledgeBase />} />
         <Route path="/settings" element={<SimpleSettings />} />
+        <Route path="/client-access" element={<ClientAccess />} />
       
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
