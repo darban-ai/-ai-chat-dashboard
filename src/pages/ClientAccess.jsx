@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { SimpleLayout } from '@/components/layout/SimpleLayout'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import ReactMarkdown from 'react-markdown'
-import { ShieldCheck, RefreshCcw, Save, Loader2, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, RefreshCcw, Save, Loader2, AlertTriangle, Info } from 'lucide-react'
 import { apiService } from '@/services/apiService'
 
 const instructionOrder = ['about', 'tone', 'response_style', 'restrictions', 'contact_info', 'custom_instructions']
@@ -75,23 +75,18 @@ const buildInstructionsPayload = (data) => {
 }
 
 export const ClientAccess = () => {
-  const [clientIdInput, setClientIdInput] = useState(defaultClientId)
-  const [activeClientId, setActiveClientId] = useState('')
+  const [clientId, setClientId] = useState(defaultClientId)
   const [instructions, setInstructions] = useState(null)
   const [defaults, setDefaults] = useState(null)
   const [lastFetchedInstructions, setLastFetchedInstructions] = useState(null)
-  const [metadata, setMetadata] = useState({ clientName: '', updatedBy: '', lastUpdated: '' })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
   const [error, setError] = useState('')
-
-  const formattedUpdatedAt = useMemo(() => (
-    metadata.lastUpdated ? new Date(metadata.lastUpdated).toLocaleString() : '—'
-  ), [metadata.lastUpdated])
+  const [defaultVisibility, setDefaultVisibility] = useState({})
 
   const fetchInstructions = useCallback(async (id) => {
-    const targetId = (id || '').trim()
+    const targetId = (id || clientId || '').trim()
     if (!targetId) {
       setError('Client ID is required')
       return
@@ -101,30 +96,27 @@ export const ClientAccess = () => {
     setStatusMessage('')
     try {
       const data = await apiService.getClientInstructions(targetId)
-      setClientIdInput(data.client_id || targetId)
-      setActiveClientId(data.client_id || targetId)
+      const resolvedId = data.client_id || targetId
+      setClientId(resolvedId)
       setInstructions(cloneDeep(data.instructions))
       setDefaults(cloneDeep(data.defaults))
       setLastFetchedInstructions(cloneDeep(data.instructions))
-      setMetadata({
-        clientName: data.client_name || '',
-        updatedBy: data.updated_by || '',
-        lastUpdated: data.last_updated || ''
-      })
     } catch (err) {
       setError(err.message || 'Failed to load client instructions')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [clientId])
 
   useEffect(() => {
     fetchInstructions(defaultClientId)
   }, [fetchInstructions])
 
-  const handleClientSubmit = async (event) => {
-    event.preventDefault()
-    await fetchInstructions(clientIdInput)
+  const toggleDefaultVisibility = (key) => {
+    setDefaultVisibility((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
   }
 
   const handleTextChange = (key, value) => {
@@ -170,7 +162,7 @@ export const ClientAccess = () => {
     if (!instructions) {
       return
     }
-    const targetId = (activeClientId || clientIdInput || '').trim()
+    const targetId = (clientId || '').trim()
     if (!targetId) {
       setError('Client ID is required')
       return
@@ -181,16 +173,11 @@ export const ClientAccess = () => {
     try {
       const payload = buildInstructionsPayload(instructions)
       const data = await apiService.updateClientInstructions(targetId, payload)
+      const resolvedId = data.client_id || targetId
+      setClientId(resolvedId)
       setInstructions(cloneDeep(data.instructions))
       setDefaults(cloneDeep(data.defaults))
       setLastFetchedInstructions(cloneDeep(data.instructions))
-      setActiveClientId(data.client_id || targetId)
-      setClientIdInput(data.client_id || targetId)
-      setMetadata({
-        clientName: data.client_name || metadata.clientName,
-        updatedBy: data.updated_by || metadata.updatedBy,
-        lastUpdated: data.last_updated || metadata.lastUpdated
-      })
       setStatusMessage('Client settings updated successfully.')
     } catch (err) {
       setError(err.message || 'Failed to save client instructions')
@@ -204,59 +191,20 @@ export const ClientAccess = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-8">
           <div className="max-w-6xl mx-auto space-y-6">
-            <Card>
-              <CardHeader className="flex justify-between items-center">
+            <Card className="!bg-transparent !border-none !shadow-none">
+              <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <CardTitle className="text-2xl font-semibold text-gray-900">Client AI Settings Access</CardTitle>
-                  <CardDescription>Manage client-specific instructions using the live API.</CardDescription>
+                  <div className="flex items-center space-x-3">
+                    <ShieldCheck className="h-8 w-8 text-teal-600" />
+                    <div>
+                      <CardTitle className="text-2xl font-semibold text-gray-900">Client AI Settings Access</CardTitle>
+                      <CardDescription>Manage client-specific instructions using the live API.</CardDescription>
+                    </div>
+                  </div>
+                  <p className={`mt-3 text-sm ${statusMessage ? 'text-green-600' : 'text-gray-500'}`}>
+                    {statusMessage || 'Use these controls to manage client-facing instruction updates.'}
+                  </p>
                 </div>
-                <ShieldCheck className="h-8 w-8 text-teal-600" />
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <form onSubmit={handleClientSubmit} className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Client ID</label>
-                    <Input
-                      value={clientIdInput}
-                      onChange={(event) => setClientIdInput(event.target.value)}
-                      placeholder="Enter client identifier"
-                      disabled={loading || saving}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={loading || saving || !clientIdInput.trim()}
-                    className="bg-teal-600 hover:bg-teal-700"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Loading
-                      </>
-                    ) : (
-                      'Load Client'
-                    )}
-                  </Button>
-                </form>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600">Client</p>
-                    <p className="text-xl font-semibold text-gray-900">{metadata.clientName || '—'}</p>
-                    <p className="text-sm text-gray-500">ID: {activeClientId || '—'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600">Last updated</p>
-                    <p className="text-sm text-gray-900">{formattedUpdatedAt}</p>
-                    <p className="text-sm text-gray-500">By {metadata.updatedBy || '—'}</p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0 bg-gray-50">
-                {statusMessage ? (
-                  <span className="text-sm text-green-600">{statusMessage}</span>
-                ) : (
-                  <span className="text-sm text-gray-500">Use these controls to manage client-facing instruction updates.</span>
-                )}
                 <div className="flex items-center space-x-3">
                   <Button
                     type="button"
@@ -278,7 +226,7 @@ export const ClientAccess = () => {
                     <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                   </Button>
                 </div>
-              </CardFooter>
+              </CardHeader>
             </Card>
 
             {error && (
@@ -311,54 +259,66 @@ export const ClientAccess = () => {
                 : Boolean((section.content || '').trim())
 
               return (
-                <Card key={key}>
+                <Card key={key} className="!bg-transparent !border-none !shadow-none">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900">{section.heading || defaultSection.heading || key}</CardTitle>
-                    <CardDescription>{hasClientContent ? 'Client override currently in use.' : 'Client override empty. Default fallback will be used.'}</CardDescription>
+                    {!hasClientContent && (
+                      <CardDescription>Default fallback will be used.</CardDescription>
+                    )}
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-8 lg:grid-cols-2">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-3">Client override</p>
-                        {isContact ? (
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                              <Input
-                                value={section.content?.email || ''}
-                                onChange={(event) => handleContactChange('email', event.target.value)}
-                                placeholder="client@example.com"
-                                disabled={saving}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
-                              <Input
-                                value={section.content?.phone || ''}
-                                onChange={(event) => handleContactChange('phone', event.target.value)}
-                                placeholder="+1 000 000 0000"
-                                disabled={saving}
-                              />
-                            </div>
+                    <div className="space-y-4">
+                      {isContact ? (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                            <Input
+                              value={section.content?.email || ''}
+                              onChange={(event) => handleContactChange('email', event.target.value)}
+                              placeholder="client@example.com"
+                              disabled={saving}
+                            />
                           </div>
-                        ) : (
-                          <textarea
-                            value={section.content || ''}
-                            onChange={(event) => handleTextChange(key, event.target.value)}
-                            placeholder="Provide client-specific instructions..."
-                            className="w-full h-48 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm leading-relaxed resize-none bg-white"
-                            disabled={saving}
-                          />
-                        )}
-                        {!hasClientContent && (
-                          <p className="mt-2 text-xs text-gray-500">Currently using default instructions.</p>
-                        )}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+                            <Input
+                              value={section.content?.phone || ''}
+                              onChange={(event) => handleContactChange('phone', event.target.value)}
+                              placeholder="+1 000 000 0000"
+                              disabled={saving}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <textarea
+                          value={section.content || ''}
+                          onChange={(event) => handleTextChange(key, event.target.value)}
+                          placeholder="Provide client-specific instructions..."
+                          className="w-full min-h-[320px] p-4 border border-gray-300 rounded-lg bg-transparent focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm leading-relaxed resize-none"
+                          disabled={saving}
+                        />
+                      )}
+                      {!hasClientContent && (
+                        <p className="text-xs text-gray-500">Currently using default instructions.</p>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleDefaultVisibility(key)}
+                          className="h-8 w-8 rounded-full border border-gray-300 text-gray-600"
+                          disabled={saving}
+                          aria-label="Toggle default instructions"
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm text-gray-600">View default instructions</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-3">Default fallback</p>
-                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                      {defaultVisibility[key] && (
+                        <div className="space-y-3 text-sm text-gray-700">
                           {isContact ? (
-                            <div className="space-y-3 text-sm text-gray-700">
+                            <div className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="font-medium text-gray-800">Email</span>
                                 <span>{defaultSection.content?.email || '—'}</span>
@@ -372,7 +332,7 @@ export const ClientAccess = () => {
                             <ReactMarkdown components={markdownComponents}>{defaultSection.content || ''}</ReactMarkdown>
                           )}
                         </div>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
