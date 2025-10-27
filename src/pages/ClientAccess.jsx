@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { SimpleLayout } from '@/components/layout/SimpleLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import ReactMarkdown from 'react-markdown'
 import { ShieldCheck, RefreshCcw, Save, Loader2, AlertTriangle, Info } from 'lucide-react'
 import { apiService } from '@/services/apiService'
@@ -55,20 +54,9 @@ const buildInstructionsPayload = (data) => {
   const payload = {}
   instructionOrder.forEach((key) => {
     const section = data[key] || {}
-    if (key === 'contact_info') {
-      const content = section.content || {}
-      payload[key] = {
-        heading: section.heading || '',
-        content: {
-          email: content.email || '',
-          phone: content.phone || ''
-        }
-      }
-    } else {
-      payload[key] = {
-        heading: section.heading || '',
-        content: section.content || ''
-      }
+    payload[key] = {
+      heading: section.heading || '',
+      content: section.content || ''
     }
   })
   return payload
@@ -130,22 +118,6 @@ export const ClientAccess = () => {
         next[key] = { heading: '', content: '' }
       }
       next[key].content = value
-      return next
-    })
-  }
-
-  const handleContactChange = (field, value) => {
-    setStatusMessage('')
-    setInstructions((prev) => {
-      if (!prev) {
-        return prev
-      }
-      const next = cloneDeep(prev)
-      if (!next.contact_info) {
-        next.contact_info = { heading: '', content: {} }
-      }
-      next.contact_info.content = next.contact_info.content || {}
-      next.contact_info.content[field] = value
       return next
     })
   }
@@ -253,10 +225,7 @@ export const ClientAccess = () => {
               if (!section || !defaultSection) {
                 return null
               }
-              const isContact = key === 'contact_info'
-              const hasClientContent = isContact
-                ? Boolean(section.content?.email || section.content?.phone)
-                : Boolean((section.content || '').trim())
+              const hasClientContent = Boolean((section.content || '').trim())
 
               return (
                 <Card key={key} className="!bg-transparent !border-none !shadow-none">
@@ -268,36 +237,13 @@ export const ClientAccess = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {isContact ? (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                            <Input
-                              value={section.content?.email || ''}
-                              onChange={(event) => handleContactChange('email', event.target.value)}
-                              placeholder="client@example.com"
-                              disabled={saving}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
-                            <Input
-                              value={section.content?.phone || ''}
-                              onChange={(event) => handleContactChange('phone', event.target.value)}
-                              placeholder="+1 000 000 0000"
-                              disabled={saving}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <textarea
-                          value={section.content || ''}
-                          onChange={(event) => handleTextChange(key, event.target.value)}
-                          placeholder="Provide client-specific instructions..."
-                          className="w-full min-h-[320px] p-4 border border-gray-300 rounded-lg bg-transparent focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm leading-relaxed resize-none"
-                          disabled={saving}
-                        />
-                      )}
+                      <textarea
+                        value={section.content || ''}
+                        onChange={(event) => handleTextChange(key, event.target.value)}
+                        placeholder="Provide client-specific instructions..."
+                        className="w-full min-h-[320px] p-4 border border-gray-300 rounded-lg bg-transparent focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm leading-relaxed resize-none"
+                        disabled={saving}
+                      />
                       {!hasClientContent && (
                         <p className="text-xs text-gray-500">Currently using default instructions.</p>
                       )}
@@ -317,20 +263,7 @@ export const ClientAccess = () => {
                       </div>
                       {defaultVisibility[key] && (
                         <div className="space-y-3 text-sm text-gray-700">
-                          {isContact ? (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-gray-800">Email</span>
-                                <span>{defaultSection.content?.email || '—'}</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-gray-800">Phone</span>
-                                <span>{defaultSection.content?.phone || '—'}</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <ReactMarkdown components={markdownComponents}>{defaultSection.content || ''}</ReactMarkdown>
-                          )}
+                          <ReactMarkdown components={markdownComponents}>{defaultSection.content || ''}</ReactMarkdown>
                         </div>
                       )}
                     </div>
