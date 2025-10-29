@@ -64,16 +64,19 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
       setLoading(true)
       setError(null)
       setErrorType(null)
-      
+
+      const limit = options.limit || 100
+      const offset = options.offset || 0
+
       const response = await apiService.getAvailableSessions(clientId, {
-        limit: options.limit || pagination.sessions.limit,
-        offset: options.offset || pagination.sessions.offset
+        limit,
+        offset
       })
-      
+
       // Store all sessions
       const fetchedSessions = response.sessions || []
       setAllSessions(fetchedSessions)
-      
+
       setPagination(prev => ({
         ...prev,
         sessions: response.pagination || prev.sessions
@@ -83,22 +86,25 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
     } finally {
       setLoading(false)
     }
-  }, [clientId, pagination.sessions.limit, pagination.sessions.offset, handleError])
+  }, [clientId, handleError])
 
   // Load messages for a specific session
   const loadMessages = useCallback(async (sessionId, options = {}) => {
     if (!sessionId) return
-    
+
     try {
       setMessagesLoading(true)
       setError(null)
       setErrorType(null)
-      
+
+      const limit = options.limit || 50
+      const offset = options.offset || 0
+
       const response = await apiService.getSessionHistory(sessionId, {
-        limit: options.limit || pagination.messages.limit,
-        offset: options.offset || pagination.messages.offset
+        limit,
+        offset
       })
-      
+
       setMessages(response.messages || [])
       setPagination(prev => ({
         ...prev,
@@ -109,7 +115,7 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
     } finally {
       setMessagesLoading(false)
     }
-  }, [pagination.messages.limit, pagination.messages.offset, handleError])
+  }, [handleError])
 
   // Handle date change
   const handleDateChange = useCallback((date) => {
@@ -158,7 +164,8 @@ export const useRealChats = (clientId = 'cid-83f1d585a5e842249c1fd1f177c2dfac') 
   // Initial load
   useEffect(() => {
     loadSessions()
-  }, [loadSessions])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return {
     // Data

@@ -58,7 +58,8 @@ export const KnowledgeBase = () => {
   useEffect(() => {
     loadDocuments()
     loadGaps()
-  }, [loadDocuments, loadGaps])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const filteredDocuments = documents.filter(doc =>
     doc.key.toLowerCase().includes(searchQuery.toLowerCase())

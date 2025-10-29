@@ -76,28 +76,35 @@ export const useKnowledgeBaseGaps = () => {
   // Load more gaps (for pagination)
   const loadMore = useCallback(async () => {
     if (loading) return
-    
+
     try {
       setLoading(true)
       setError(null)
       setErrorType(null)
-      
-      const newOffset = pagination.offset + pagination.limit
-      
-      const response = await apiService.getKnowledgeBaseGaps(clientId, {
-        limit: pagination.limit,
-        offset: newOffset
+
+      setPagination(prev => {
+        const newOffset = prev.offset + prev.limit
+
+        apiService.getKnowledgeBaseGaps(clientId, {
+          limit: prev.limit,
+          offset: newOffset
+        }).then(response => {
+          setGaps(current => [...current, ...(response.gaps || [])])
+          setPagination(response.pagination || { ...prev, offset: newOffset })
+          setLoading(false)
+        }).catch(err => {
+          handleError(err, 'load more knowledge base gaps')
+          setLoading(false)
+        })
+
+        return prev
       })
-      
-      setGaps(prev => [...prev, ...(response.gaps || [])])
-      setPagination(response.pagination || { ...pagination, offset: newOffset })
-      
+
     } catch (err) {
       handleError(err, 'load more knowledge base gaps')
-    } finally {
       setLoading(false)
     }
-  }, [clientId, pagination, loading, handleError])
+  }, [clientId, loading, handleError])
 
   // Answer a gap
   const answerGap = useCallback(async (gapId, answer) => {
@@ -150,8 +157,8 @@ export const useKnowledgeBaseGaps = () => {
 
   // Refresh gaps
   const refresh = useCallback(() => {
-    loadGaps({ limit: pagination.limit, offset: 0 })
-  }, [loadGaps, pagination.limit])
+    loadGaps({ limit: 30, offset: 0 })
+  }, [loadGaps])
 
   // Format date helper
   const formatDate = useCallback((dateString) => {
