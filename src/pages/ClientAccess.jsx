@@ -74,7 +74,7 @@ export const ClientAccess = () => {
   const [defaultVisibility, setDefaultVisibility] = useState({})
 
   const fetchInstructions = useCallback(async (id) => {
-    const targetId = (id || clientId || '').trim()
+    const targetId = (id || '').trim()
     if (!targetId) {
       setError('Client ID is required')
       return
@@ -94,11 +94,13 @@ export const ClientAccess = () => {
     } finally {
       setLoading(false)
     }
-  }, [clientId])
+  }, [])
 
+  // Load initial client data on mount only
   useEffect(() => {
     fetchInstructions(defaultClientId)
-  }, [fetchInstructions])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const toggleDefaultVisibility = (key) => {
     setDefaultVisibility((prev) => ({
