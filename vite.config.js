@@ -15,7 +15,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/instructions-api': {
-        target: 'https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production',
+        target: 'https://shopify-api.darban.ai',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/instructions-api/, ''),
       },

@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production
+https://shopify-api.darban.ai
 ```
 
 ## Authentication
@@ -82,13 +82,13 @@ Content-Type: application/json
 #### Example Request
 
 ```bash
-curl https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions
+curl https://shopify-api.darban.ai/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions
 ```
 
 ```javascript
 // JavaScript/Fetch
 const response = await fetch(
-  'https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions'
+  'https://shopify-api.darban.ai/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions'
 );
 const data = await response.json();
 ```
@@ -157,7 +157,7 @@ Same format as GET response with updated values.
 
 ```bash
 curl -X POST \
-  https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions \
+  https://shopify-api.darban.ai/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions \
   -H "Content-Type: application/json" \
   -d '{
     "instructions": {
@@ -173,7 +173,7 @@ curl -X POST \
 ```javascript
 // JavaScript/Fetch
 const response = await fetch(
-  'https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions',
+  'https://shopify-api.darban.ai/client-configs/cid-83f1d585a5e842249c1fd1f177c2dfac/instructions',
   {
     method: 'POST',
     headers: {

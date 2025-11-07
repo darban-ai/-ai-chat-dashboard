@@ -3,7 +3,7 @@
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const INSTRUCTIONS_API_BASE_URL = import.meta.env.VITE_INSTRUCTIONS_API_BASE_URL || (import.meta.env.DEV ? '/instructions-api' : 'https://hbao5egnck.execute-api.us-east-1.amazonaws.com/production')
+const INSTRUCTIONS_API_BASE_URL = import.meta.env.VITE_INSTRUCTIONS_API_BASE_URL || (import.meta.env.DEV ? '/instructions-api' : 'https://shopify-api.darban.ai')
 
 // Custom Error Classes for better error categorization
 class ApiError extends Error {
